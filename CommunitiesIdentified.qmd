@@ -1,0 +1,1676 @@
+---
+title: "Change and Stability in Louisiana Fishing Communities"
+author: "Suzana Blake"
+---
+###Longitudinal Dealers Project
+
+##Background:
+In order to calculate fisheries engagement and reliance, we depend on several variables. One of the critical variables is the number of dealers a community has in a given year. This is a valuable metric, and even proxy, in determining how important fisheries is to a community – the higher the number of dealers can imply: more opportunities for fishermen to sell their fish (thus drawing in more fishermen into that community), a community which depends on, or promotes, its seafood heritage, and/or a community which is located in an area with good fishing grounds.
+Dealer data is currently collected through various data sources: ALS, ACCSP, and GSFMC. Over the past several decades, many states have transitioned, at different times, to the Trip Ticket program. Yet, not all states have digitized nor kept records of “historic” fisheries landings data. Because of the lack in “clean” and “accurate” data, it is difficult to properly calculate long-term fisheries engagement and reliance scores.
+In early 2022, SSRG sought to fill the gaps in historic dealer data. Over the course of half a year, researchers have collected and cleaned fisheries landing data from the first year of available data, 1977, to 2013.
+
+##Methodology:
+All of the landings data was first downloaded, each year, from 1977-2013.
+The data has many limitations and shortcomings. A Dealer’s name can be listed, yet its community is unresolved. A landing could have an associated community, yet no Dealer. There are several combinations of mismatches which needed to be patched. For the purposes of the data, “unresolved” (in the community field) is when the dealer is known and the community is not known. “Unknown” is when both dealer and community are not known.
+The data was first cross-referenced to find any dealers that were identified in one year but not the other. Dealer’s names were ascertained by SupplierDealerID and/or License Number. It was common for dealers to be described (their community identified) in later years compared to the first years of the data records.
+Multiple online sources were used to locate and identify historic dealers. Some of the sources used, but not limited to, were: annual Interstate Certified Shellfish Shippers Lists (ICSSL), state business directories, online newspaper archives, and extensive google searches.
+After all the data that could have been collected through available sources, SSRG researchers contacted each state’s respective agency.  Because not all states began their Trip Ticket program at the same time, states varied in the accuracy of their data. Other states, like Texas and Georgia, did not digitize any landings data predating a certain year. There was only one state which refused to cooperate – Louisiana.
+The data shared by the states was integrated into the historic landings data. Dealers were identified through provided license/supplier numbers. 
+
+Outputs:
+There are several folders and spreadsheets found in the “Longitudinal Dealers Project” folder.
+A folder with each year’s cleaned data can be found in “1977-2013 Cleaned Data”. In each decade’s folder, you can find a spreadsheet with the whole decade’s landings.
+In the “Resolved and Unresolved Dealers by State” folder, you can find a spreadsheet of partially identified dealers from each state. This was the information gathered from each state’s agency. Note: this data has to be checked if it has been thoroughly integrated in the “1977 – 2013 Cleaned Data”. The fastest way to check and/or fill in the data is through a “vlookup” formula in Excel. The spreadsheets in this folder contains all the dealers that have not been identified.
+
+Remaining Tasks:
+To calculate fisheries engagement and reliance, vessel permit data and population data is needed. 
+Find the permit/vessel data by year and associate it with the respective community.
+Find the population data for each community. Not all communities were/are incorporated for the duration of this study, so population data might not be readily available.
+
+
+
+
+```{r}
+#| echo: false
+#| warning: false
+
+library("tidyverse")
+library("here")
+library("skimr")
+library("janitor")
+library("dplyr")
+library("ggplot2")
+
+options(scipen = 999) # takes away the scientific notation 
+```
+
+
+Data source: Anthony's Dealers Files
+
+```{r}
+#| echo: false
+#| warning: false
+
+GOM <- read.csv("~/Resilience/DATA\\Final_GOM_Dealers_Data.csv", header=T, skip=0, sep=",", quote="\"", stringsAsFactors = F)
+
+glimpse(GOM)
+names(GOM)
+head(GOM)
+knitr::kable(
+  GOM[1:6, 1:12]
+)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Inflation Adjustment 
+
+```{r}
+GOM$X <- NULL #deletes the X column 
+GOM
+
+Inflation <- read.csv("InflationAdj.csv")
+Infl_2020 <- Inflation[Inflation$landed_year==2020,][,2] #this is a dataframe to use to adjust the value to 2020
+
+Infl_2020 <- Inflation[Inflation$Year==2020,][,2]
+# next we are adding the inflation index values to our master file - left joing by year
+#first make sure the column names are the same; so changing "Year" to landed_year"
+
+colnames(Inflation)[1]<-"landed_year" 
+#left join - look into dplyer
+GOM_I<- left_join (GOM,Inflation)
+
+GI <- GOM_I %>% mutate(Adjust_factor=Infl_2020/Inflation_index, Adjusted_Val=round(Adjust_factor*value,0)) #created a new column with the operation for Infl adjustement and then rounded the results
+
+new_folder_path <- "~/Resilience/UpdatedData"
+dir.create(new_folder_path, showWarnings = FALSE)
+# Save the data frame to an RDS file in the new folder
+rds_file_path <- file.path(new_folder_path, "GI.RData")
+saveRDS(GI, file = rds_file_path)
+
+#glimpse(GI)
+
+```
+
+
+
+
+
+
+
+Understanding the Species presented in this dataset
+
+Last work here: 8/23/23 - after Brittany showed me how to identify and group species I did some work to streamline the species and make sure my pounds and value add up correctly. 
+ran into some issues as I don't know if I should group crab with blue crab for example
+
+
+```{r}
+#| echo: false
+#| warning: false
+
+com_names<-unique(GI$common_name)
+order(com_names)
+list(com_names)
+
+
+com_names[str_detect(com_names, regex("grouper", ignore_case = T))]# pulls out everything that contains shrimp in it regardless of capitalization
+com_names[str_detect(com_names, regex("shrimp", ignore_case = T))]
+com_names[str_detect(com_names, regex("crab", ignore_case = T))]
+com_names[str_detect(com_names, regex("oyster", ignore_case = T))]
+com_names[str_detect(com_names, regex("tuna", ignore_case = T))]
+com_names[str_detect(com_names, regex("snapper", ignore_case = T))]
+com_names[str_detect(com_names, regex("drum", ignore_case = T))]
+
+BWP_shrimp <- c("Brown Shrimp",  "White Shrimp","Pink Shrimp")
+Other_shrimp <- c("SHRIMP, ATLANIC SEABOB", "SHRIMP, ROYAL RED", "SHRIMP, ROCK", "SHRIMPS, PENAEOID", "SHRIMP, ROUGHNECK", "SHRIMP, BAIT", "SHRIMP, PISTOL OR SNAPPING", "SHRIMP, BANDED CORAL", "SHRIMP, PEPPERMINT", "SHRIMP, CLEANER", "SHRIMP, SPOTTED CLEANER", "SHRIMP, MARINE", "SHRIMP, MANTIS","SHRIMP,ROCK", "SHRIMP,FW", "SHRIMP, FARFANTEPENAEUS SPP","SHRIMP, PEDERSON CLEANER", "SHRIMP, GOLDEN CORAL", "SHRIMPS, BAIT", "SHRIMPS, PISTOL OR SNAPPING", "SHRIMPS, MANTIS")
+Grouper <- c("GROUPERS", "GOLIATH GROUPER", "GROUPER, WARSAW","GROUPER, GAG", "GROUPER, YELLOWEDGE","GROUPER, RED","GROUPER, BLACK", "GROUPER, YELLOWFIN", "GROUPER, SNOWY","GROUPER, NASSAU","GROUPER, YELLOWMOUTH","GROUPER, MISTY", "GROUPER, TIGER","GROUPER, MARBLED", "GROUPER, HIND RED","GROUPER, SCAMP", "GROUPER, SPECKLED HIND", "GROUPER, CONEY","GROUPERS, SERRANIDAE (FAMILY)")
+Tuna <- c("TUNA", "TUNA, BLACKFIN", "TUNA, BLUEFIN","TUNA, YELLOWFIN", "TUNA, BIGEYE", "TUNA, SKIPJACK","TUNA, LITTLE TUNNY", "TUNA, ALBACORE")
+Snapper <- c("SNAPPER, RED","SNAPPER, GRAY","SNAPPER, VERMILION","SNAPPER, MUTTON","SNAPPER, LANE","SNAPPER, YELLOWTAIL", "SNAPPERS","SNAPPER, SILK", "SNAPPER, CUBERA", "SNAPPER, BLACKFIN", "SNAPPER, QUEEN","SNAPPER, GLASSEYE", "SNAPPER, DOG", "SNAPPER, BLACK", "SNAPPER, MAHOGANY","SNAPPER, CARIBBEAN RED","SNAPPERS, LUTJANIDAE (FAMILY)")
+
+GI$group[GI$common_name %in% BWP_shrimp]<-"BWP Shrimp"
+GI$group[GI$common_name %in% Other_shrimp]<-"Other Shrimp"
+GI$group[GI$common_name %in% Grouper]<-"Grouper"
+GI$group[GI$common_name %in% Tuna]<-"Tuna"
+GI$group[GI$common_name %in% Snapper]<-"Snapper"
+#GOM$group[GOM$common_name %in% Snapper]<-"Snapper"
+
+# check this page for more tips on strings and piping https://stringr.tidyverse.org/
+
+#Shrimp <- com_names[str_detect(com_nms, regex("shrimp", ignore_case = T))] 
+#Grouper <- com_names[str_detect(com_names, regex("grouper", ignore_case = T))]
+
+#GOM$group[test$common_name %in% Shrimp2]<-"shrimp" # we create a column named "group" and placed in it everything that contains the word shrimp
+#GOM$group[test$common_name %in% Grouper]<-"grouper"
+
+
+#recshrimp<-c("Brown Shrimp", "White Shrimp", "Pink Shrimp") #created a category for all the recreational fish species 
+#test$group[test$common_name %in% recshrimp]<-"rec_shrimp"
+
+#Snap_group <- com_nms[str_detect(com_nms, regex("grouper", ignore_case = T))| str_detect(com_nms, regex("snapper", ignore_case = T))] 
+#test$group[test$common_name %in% Snap_group]<-"snapper-grouper"
+
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+
+## Louisiana
+
+A. Key Species for Louisiana
+
+
+```{r}
+LA <- GI %>% 
+      filter(dealer_state =='LA')
+
+Sum_by_SpeciesLA <- LA %>% group_by(species_itis, common_name) %>% summarise(sum_lbs = sum(live_lbs, na.rm = TRUE))
+Sum_by_SpeciesLA[order(-Sum_by_SpeciesLA$sum_lbs),]
+
+Sum_by_Species_valLA <- LA %>% group_by(species_itis, common_name) %>% summarise(sum_val = sum(Adjusted_Val, na.rm = TRUE))
+Sum_by_Species_valLA[order(-Sum_by_Species_valLA$sum_val),]
+```
+B. Identify Parishes in LA  
+
+
+```{r}
+#| warning: false
+
+GI$county_name[which(GI$county_name == "ST MARY")] <- "ST. MARY"  # fix spelling  
+GI$county_name[which(GI$county_name == "SAINT MARY")] <- "ST. MARY"
+GI$county_name[which(GI$county_name == "ST BERNARD" )] <- "ST. BERNARD"
+GI$county_name[which(GI$county_name == "ST TAMMANY")] <- "ST. TAMMANY"
+GI$county_name[which(GI$county_name == "ST JOHN THE BAPTIST")] <- "ST. JOHN THE BAPTIST"
+GI$county_name[which(GI$county_name == "ST CHARLES")] <- "ST. CHARLES"
+
+GI %>% filter(county_name == 'ST. MARY') %>% # how many unique values for this county
+  nrow()
+GI %>% filter(county_name == 'ST MARY') %>%
+  nrow()
+
+GI %>% filter(county_name == 'ST. BERNARD') %>% # how many unique values for this county
+  nrow()
+
+SpeciesLA <- c("Brown Shrimp","White Shrimp","CRAB, BLUE","OYSTER, EASTERN", "TUNA","YELLOWFIN", "SNAPPER, RED", "DRUM, BLACK", "SNAPPER, VERMILION", "SHARK, BLACKTIP", "SHEEPSHEAD", "GROUPER, YELLOWEDGE", "TUNA, BLUEFIN")
+
+ShrimpLA <- c("Brown Shrimp","White Shrimp" )
+
+Other <- c("CRAB, BLUE","OYSTER, EASTERN", "TUNA","YELLOWFIN", "SNAPPER, RED", "DRUM, BLACK", "SNAPPER, VERMILION", "SHARK, BLACKTIP", "SHEEPSHEAD", "GROUPER, YELLOWEDGE", "TUNA, BLUEFIN")
+
+LA<- GI %>% 
+      filter(dealer_state =='LA')
+unique(LA$county_name)
+
+Top10_LA<-LA[LA$common_name %in% SpeciesLA,]
+unique(Top10_LA$county_name)
+TopShrimp <- LA[LA$common_name %in% ShrimpLA,]
+
+unique(TopShrimp$county_name)
+
+TopOther <- LA[LA$common_name %in% Other,] # top species that are not shrimp 
+unique(TopOther$county_name)
+
+Top10_LA_P <- Top10_LA %>% filter(Top10_LA$value !=0)
+unique(Top10_LA_P$county_name)
+
+#unique(Top10$year)
+#Top10 %>% filter(Top10$year=="2010"| Top10$year== "2009" |Top10$year== "2008" | Top10$year== "2007"| Top10$year== "2006"| Top10$year== "2005")
+
+ggplot(Top10_LA,aes(x=landed_year, y=live_lbs))+
+  stat_summary(geom="bar", fun="mean", na.rm = T,position=position_stack(), aes(fill=common_name))+
+   labs(
+    title = "Fishing Trends for Most Valuable Commercially Fished Species for Louisiana",
+    subtitle = "Landed Pounds for the entire state",
+    x = "Landed Year", y = "Total Landed Pounds",
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+    theme(axis.text.x = element_text(angle=90))
+
+
+```
+
+Trends by County 
+
+```{r}
+ggplot(Top10_LA,aes(x=landed_year, y=Adjusted_Val))+
+  facet_wrap(~county_name)+
+  stat_summary(geom="bar", fun="mean", na.rm = T,position=position_stack(),)+
+  labs(
+    title = "Fishing Trends for Most Valuable Commercially Fished Species for Louisiana",
+    subtitle = "Inflation Adjusted Values by County",
+    x = "Year Landed", y = "Value: Inflation Adjusted to 2020",
+    )+
+  theme(axis.text.x = element_text(angle=90))
+
+```
+
+
+
+Trends for Shrimp only by County
+
+```{r}
+
+ggplot(TopShrimp,aes(x=landed_year, y=Adjusted_Val))+
+  facet_wrap(~county_name)+
+  stat_summary(geom="bar", fun="mean", na.rm = T,position=position_stack())+
+  labs(
+    title = "Fishing Trends for Shrimp Species for Louisiana",
+    subtitle = "Inflation Adjusted Values by County",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+```
+
+Fisheing trends for all Species except Shrimp
+
+```{r}
+ggplot(TopOther,aes(x=landed_year, y=Adjusted_Val))+
+  facet_wrap(~county_name)+
+  stat_summary(geom="bar", fun="mean", na.rm = T,position=position_stack())+
+  labs(
+    title = "Fishing Trends for Non-Shrimp Species for Louisiana",
+    subtitle = "Inflation Adjusted Values by County",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+```
+
+
+```{r}
+ggplot(Top10_LA,aes(x=landed_year, y=Adjusted_Val))+
+  stat_summary(geom="bar", fun="mean", na.rm = T, position=position_stack(), aes(fill=common_name))+
+  labs(
+    title = "Fishing Trends for Most Valuable Commercial Species for Louisiana",
+    subtitle = "Inflation Adjusted Values",
+    x = "Year", y = "Annual Value",
+   fill = "Species"  # Add this line to label the fill legend
+  )+
+  theme(axis.text.x = element_text(angle=90))
+
+
+ggplot(Top10_LA,aes(x=landed_year, y=live_lbs))+
+  stat_summary(geom="bar", fun="mean", na.rm = T, position=position_stack(), aes(fill=common_name))+
+  labs(
+    title = "Fishing Trends for Most Valuable Commercial Species for Louisiana",
+    subtitle = "Landed Pounds",
+    x = "Year", y = "Annual Pounds Landed",
+   fill = "Species"  # Add this line to label the fill legend
+  )+
+  theme(axis.text.x = element_text(angle=90))
+
+```
+
+Trends for Shrimp Species in Louisiana 
+
+```{r}
+
+ggplot(TopShrimp,aes(x=landed_year, y=Adjusted_Val))+
+  stat_summary(geom="bar", fun="mean", na.rm = T, position=position_stack(),aes(fill=common_name ))+
+  labs(
+    title = "Fishing Trends for Shrimp Species for Louisiana",
+    subtitle = "Inflation Adjusted Values",
+    x = "Year", y = "Annual Value",
+     fill = "Shrimp Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+
+ggplot(TopShrimp,aes(x=landed_year, y=live_lbs))+
+  stat_summary(geom="bar", fun="mean", na.rm = T, position=position_stack(),aes(fill=common_name ))+
+  labs(
+    title = "Fishing Trends for Shrimp Species for Louisiana",
+    subtitle = "Pounds Landed",
+    x = "Year", y = "Annual Pounds Landed",
+     fill = "Shrimp Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+
+```
+
+Organize data to graph the values and landed pounds in the same figure
+
+```{r}
+TopShrimp %>% select (landed_year, county_name, dealer_city, live_lbs, Adjusted_Val) #select only what data I need
+
+
+Shrimp_Fig <- TopShrimp %>% select (landed_year, county_name, dealer_city, common_name, live_lbs, Adjusted_Val) %>% pivot_longer(cols = c(live_lbs, Adjusted_Val), names_to ="LiveBoth" , values_to ="ValuesBoth")#pivot longer; basically I created a column that just explains the name for Live_LBs and Adjusted Values; this is so you can easily compare pounds and values; look into long format - explaining tidyverse. 
+
+
+ggplot(Shrimp_Fig, aes(x=landed_year, y=ValuesBoth))+
+  facet_wrap(~common_name, ncol=1)+
+  stat_summary(geom="line", fun="sum",aes(color=LiveBoth))
+
+
+
+
+
+```
+
+
+
+
+
+
+
+```{r}
+ggplot(TopOther,aes(x=landed_year, y=Adjusted_Val))+
+  stat_summary(geom="bar", fun="mean", na.rm = T, position=position_stack(),aes(fill=common_name ))+
+  labs(
+    title = "Fishing Trends for Shrimp Species for Louisiana",
+    subtitle = "Inflation Adjusted Values",
+    x = "Year Landed", y = "Annual Value",
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+
+ggplot(TopOther,aes(x=landed_year, y=live_lbs))+
+  stat_summary(geom="bar", fun="mean", na.rm = T, position=position_stack(),aes(fill=common_name ))+
+  labs(
+    title = "Fishing Trends for Shrimp Species for Louisiana",
+    subtitle = "Landed Pounds",
+    x = "Year Landed", y = "Annual Landed Pounds",
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+
+```
+
+
+
+[1] "VERMILION"            "TERREBONNE"           "JEFFERSON"            "ST MARY"              "PLAQUEMINES"          "CAMERON"             
+ [7] "JEFFERSON DAVIS"      "LAFOURCHE"            "ST BERNARD"           "ORLEANS"              "HANCOCK"              "TANGIPAHOA"          
+[13] "IBERIA"               "ST TAMMANY"           "HARRISON"             "CALDWELL"             "ST. TAMMANY"          "RAPIDES"             
+[19] "ST. MARY"             "EAST BATON ROUGE"     "ST. CHARLES"          "ST. MARTIN"           "AVOYELLES"            "ST. BERNARD"         
+[25] "ACADIA"               "LIVINGSTON"           "ASCENSION"            "LAFAYETTE"            "ST. LANDRY"           "ST. JAMES"           
+[31] "CATAHOULA"            "CALCASIEU"            "EAST CARROLL"         "ST. JOHN THE BAPTIST" "DE SOTO"              "OUACHITA"            
+[37] "ASSUMPTION"           "NATCHITOCHES"         "IBERVILLE"            "BIENVILLE"            "CADDO"                "EVANGELINE"          
+[43] "FRANKLIN"             ""                     "UNION"                "WASHINGTON"           "BOSSIER"              "ST CHARLES"          
+[49] "CONCORDIA"            "GRANT"                "POINTE COUPEE"        "SABINE"               "RICHLAND"             "MADISON"             
+[55] "WINN"                 "LINCOLN"              "WEST BATON ROUGE"     "RED RIVER"            "WEBSTER"              "WEST FELICIANA"      
+[61] "TENSAS"               "MOREHOUSE"            "EAST FELICIANA"       "ALLEN"                "MOBILE"               "WEST CARROLL"        
+[67] "BEAUREGARD"           "CLAIBORNE"            "LA SALLE"             "JACKSON"              "ST JAMES"             "ST HELENA"           
+[73] "ST JOHN THE BAPTIST"  "VERNON"               "ST LANDRY"            "SAINT MARY"           "SAINT JAMES"          "GALVESTON"           
+[79] "ST MARTIN"            "HARRIS"               "PEARL RIVER"          "DESOTO"               "CHAMBERS"             "LEE"                 
+[85] "0"                   
+ [1] "VERMILION"            "TERREBONNE"           "JEFFERSON"            "ST MARY"              "PLAQUEMINES"          "CAMERON"             
+ [7] "JEFFERSON DAVIS"      "LAFOURCHE"            "ST BERNARD"           "ORLEANS"              "HANCOCK"              "TANGIPAHOA"          
+[13] "IBERIA"               "ST TAMMANY"           "HARRISON"             "CALDWELL"             "ST. TAMMANY"          "RAPIDES"             
+[19] "ST. MARY"             "EAST BATON ROUGE"     "ST. CHARLES"          "ST. MARTIN"           "AVOYELLES"            "ST. BERNARD"         
+[25] "ACADIA"               "LIVINGSTON"           "ASCENSION"            "LAFAYETTE"            "ST. LANDRY"           "ST. JAMES"           
+[31] "CATAHOULA"            "CALCASIEU"            "EAST CARROLL"         "ST. JOHN THE BAPTIST" "NATCHITOCHES"         "ASSUMPTION"          
+[37] "IBERVILLE"            "BIENVILLE"            "CADDO"                "EVANGELINE"           "OUACHITA"             "FRANKLIN"            
+[43] ""                     "UNION"                "WASHINGTON"           "BOSSIER"              "ST CHARLES"           "CONCORDIA"           
+[49] "GRANT"                "POINTE COUPEE"        "SABINE"               "RICHLAND"             "MADISON"              "WINN"                
+[55] "DE SOTO"              "LINCOLN"              "WEST BATON ROUGE"     "RED RIVER"            "WEBSTER"              "WEST FELICIANA"      
+[61] "TENSAS"               "MOREHOUSE"            "EAST FELICIANA"       "ALLEN"                "MOBILE"               "WEST CARROLL"        
+[67] "BEAUREGARD"           "CLAIBORNE"            "LA SALLE"             "JACKSON"              "ST JAMES"             "ST HELENA"           
+[73] "ST JOHN THE BAPTIST"  "VERNON"               "ST LANDRY"            "SAINT MARY"           "SAINT JAMES"          "GALVESTON"           
+[79] "ST MARTIN"            "HARRIS"               "PEARL RIVER"          "DESOTO"               "CHAMBERS"             "LEE"                 
+[85] "0"                   
+R Console
+
+
+C. Landings for Key Parishes in LA
+
+
+
+Landings of Key Commercial Species in Cameron Parish
+
+```{r}
+#| echo: false
+#| warning: false
+Cameron_P <- LA %>% filter(LA$county_name=="CAMERON")
+Top10_CAM <-Cameron_P[Cameron_P$common_name %in% SpeciesLA,]
+
+ggplot(Top10_CAM,aes(x=landed_year, y=value))+
+    stat_summary(geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    theme(axis.text.x = element_text(angle=90))
+
+
+ggplot(Top10_CAM,aes(x=landed_year, y=value))+
+  facet_wrap(~common_name)+
+  stat_summary(geom="bar", fun="mean", na.rm = T)+
+  theme(axis.text.x = element_text(angle=90))
+
+```
+
+Learning how to group species by first understanding everything that contains a certain word, like "shrimp" indifferent of case. 
+
+```{r}
+#| echo: false
+#| warning: false
+test <- GI
+#test %>% contains (test$common_name, "shrimp")
+
+
+com_nms<-unique(test$common_name)
+#str_extract(com_nms, "Shrimp") # ths extracts the word "Shrimp" out of the rows
+
+str_detect(com_nms, "Shrimp")
+com_nms[str_detect(com_nms,"Shrimp")]
+com_nms[str_detect(com_nms,"shrimp")]
+com_nms[str_detect(com_nms,"SHRIMP")]
+
+com_nms[str_detect(com_nms, regex("shrimp", ignore_case = T))] # pulls out everything that contains shrimp in it regardless of capitalization
+
+# check this page for more tips on strings and piping https://stringr.tidyverse.org/
+
+Shrimp2 <- com_nms[str_detect(com_nms, regex("shrimp", ignore_case = T))] 
+
+
+test$group[test$common_name %in% Shrimp2]<-"shrimp" # we create a column named "group" and placed in it everything that contains the word shrimp
+
+recshrimp<-c("Brown Shrimp", "White Shrimp", "Pink Shrimp") #created a category for all the recreational fish species 
+test$group[test$common_name %in% recshrimp]<-"rec_shrimp"
+
+Snap_group <- com_nms[str_detect(com_nms, regex("grouper", ignore_case = T))| str_detect(com_nms, regex("snapper", ignore_case = T))] 
+test$group[test$common_name %in% Snap_group]<-"snapper-grouper"
+
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+## D. Community Trends
+
+Cities in Cameron Parish
+
+```{r}
+#| warning: false
+Cameron_C <- Cameron_P %>% group_by(dealer_city) %>% summarise(sum_val = sum(Adjusted_Val, na.rm = TRUE))
+Cameron_C[order(-Cameron_C$sum_val),]
+
+```
+
+##Communities and key LA species in Cameron Parish
+
+```{r}
+#| warning: false
+Com_CameronP <- Cameron_P %>% filter(Cameron_P$dealer_city=="CAMERON"| Cameron_P$dealer_city=="HACKBERRY")
+Cameron_dealer_city <-Com_CameronP[Com_CameronP$common_name %in% SpeciesLA,]
+
+ggplot(Cameron_dealer_city,aes(x=landed_year, y=Adjusted_Val))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Most Valuable Commercial Species for Louisiana",
+    subtitle = "Cameron Parish Communities",
+    x = "Year", y = "Annual Value", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+ggsave( "Cameron.jpg", plot = last_plot(),  path = "~/Resilience/")
+
+
+```
+
+Can we have landed pounds and value together so we can see differences?
+
+
+```{r}
+Com_CameronP <- Cameron_P %>% filter(Cameron_P$dealer_city=="CAMERON"| Cameron_P$dealer_city=="HACKBERRY")
+Cameron_dealer_city <-Com_CameronP[Com_CameronP$common_name %in% ShrimpLA,]
+
+ggplot(Cameron_dealer_city,aes(x=landed_year, y=Adjusted_Val))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Shrimp Species for Louisiana",
+    subtitle = "Cameron Parish Communities",
+    x = "Year", y = "Annual Value", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+ggsave( "Cameron.jpg", plot = last_plot(),  path = "~/Resilience/")
+
+
+ggplot(Cameron_dealer_city,aes(x=landed_year, y=live_lbs))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Shrimp Species for Louisiana",
+    subtitle = "Cameron Parish Communities",
+    x = "Year", y = "Landed Pounds", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+#ggsave( "Cameron.jpg", plot = last_plot(),  path = "~/Resilience/")
+
+```
+
+
+
+#Landings in Cameron City
+
+trends led by brown and white shrimp with downward trend for these species
+
+```{r}
+#| warning: false
+Cameron_City <- Cameron_P%>% filter(Cameron_P$dealer_city=="CAMERON")
+Cam_City <-Cameron_City[Cameron_City$common_name %in% SpeciesLA,]
+
+ggplot(Cam_City,aes(x=landed_year, y=value))+
+      stat_summary(geom="bar", fun="mean", na.rm = T, aes(fill=common_name))+
+  theme(axis.text.x = element_text(angle=90))
+
+ggplot(Cam_City,aes(x=landed_year, y=value))+
+  facet_wrap(~common_name)+
+   geom_smooth()+
+    stat_summary(geom="bar", fun="mean", na.rm = T, aes(fill=common_name))+
+  labs(
+    title = "Cameron City Landed Species",
+    subtitle = "Most Valuable Commercial Fish Species for Louisiana",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+```
+
+##Communities in Jefferson Parish
+STAND OUT: Grand Isle (seems resilient)
+
+```{r}
+#| warning: false
+
+Jeff_P <- LA %>% filter(LA$county_name=="JEFFERSON")
+Top10_Jeff <-Jeff_P[Jeff_P$common_name %in% SpeciesLA,]
+
+
+Jeff_C <- Jeff_P %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE))
+Jeff_C[order(-Jeff_C$sum_val),]
+
+
+Com_JeffP <- Jeff_P %>% filter(Jeff_P$dealer_city=="LAFITTE"| Jeff_P$dealer_city=="GRAND ISLE"| Jeff_P$dealer_city=="MARRERO" | Jeff_P$dealer_city=="CROWN POINT" | Jeff_P$dealer_city=="GRETNA" | Jeff_P$dealer_city=="BARATARIA"| Jeff_P$dealer_city=="GOLDEN MEADOW")
+
+Jeff_cities <-Com_JeffP[Com_JeffP$common_name %in% SpeciesLA,]
+
+ggplot(Jeff_cities,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  geom_smooth()+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T)+
+  labs(
+    title = "Jefferson Parish Fishing Communities",
+    subtitle = "Most Valuable Commercial Fish Species for Louisiana",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+
+```
+
+
+##Communities in Lafourche Parish
+
+"LAFOURCHE" 
+
+Stand out CUT OFF, Golden MEadow, Theriot
+
+```{r}
+#| warning: false
+
+Laf_P <- LA %>% filter(LA$county_name=="LAFOURCHE")
+Top10_Laf <-Laf_P[Laf_P$common_name %in% SpeciesLA,]
+
+
+Laf_C <- Laf_P %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE))
+Laf_C[order(-Laf_C$sum_val),]
+
+
+Com_LafP <- Laf_P %>% filter(Laf_P$dealer_city=="GOLDEN MEADOW"| Laf_P$dealer_city=="CUT OFF"| Laf_P$dealer_city=="LOCKPORT" | Laf_P$dealer_city=="LAROSE" | Laf_P$dealer_city=="RACELAND" | Laf_P$dealer_city=="THERIOT"| Laf_P$dealer_city=="THIBODAUX")
+
+Laf_cities <-Com_LafP[Com_LafP$common_name %in% SpeciesLA,]
+
+ggplot(Laf_cities,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  geom_smooth()+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+  labs(
+    title = "Lafourche Parish Fishing Communities",
+    subtitle = "Most Valuable Commercial Fish Species for Louisiana",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+```
+
+
+##Communities in Plaquemine Parish
+STAND OUT: Boothville, Buras, Venice.
+note that if I add the menhadens in species - everything else is dwarfed and Empite shows as a major landing post with values close to $80.000.000 /year
+
+```{r}
+#| warning: false
+Plaq_P <- LA %>% filter(LA$county_name=="PLAQUEMINES")
+dealer_city<-unique(Plaq_P$dealer_city)
+order(dealer_city)
+list(dealer_city)
+
+Plaq_P$dealer_city[which(Plaq_P$dealer_city == "VENICE LA")] <- "VENICE"
+
+
+Top10_Plaq <-Plaq_P[Plaq_P$common_name %in% SpeciesLA,]
+
+
+Plaq_C <- Plaq_P %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE))
+Plaq_C[order(-Plaq_C$sum_val),]
+
+
+Com_PlaqP <- Plaq_P %>% filter(Plaq_P$dealer_city=="EMPIRE"| Plaq_P$dealer_city=="VENICE"| Plaq_P$dealer_city=="BOOTHVILLE" | Plaq_P$dealer_city=="PORT SULPHUR" | Plaq_P$dealer_city=="BURAS" | Plaq_P$dealer_city=="VENICE LA"| Plaq_P$dealer_city=="BELLE CHASSE")
+
+Plaq_cities <-Com_PlaqP[Com_PlaqP$common_name %in% SpeciesLA,]
+
+ggplot(Plaq_cities,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  geom_smooth()+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+  labs(
+    title = "Fishing Trends for Most Valuable Commercial Species in Louisiana",
+    subtitle = "Plaquemine Parish Communities",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+  
+ggsave( "Plaquemine.jpg", plot = last_plot(),  path = "~/Resilience/")
+  
+```
+
+##Communities in Orleans Parish
+
+"ORLEANS"
+
+New Orleans stands out the most in terms of value/volume and trends.
+
+```{r}
+#| warning: false
+Orleans_P <- LA %>% filter(LA$county_name=="ORLEANS")
+Top10_Orleans <-Orleans_P[Orleans_P$common_name %in% SpeciesLA,]
+
+
+Orleans_C <- Orleans_P %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE))
+Orleans_C[order(-Orleans_C$sum_val),]
+
+
+Com_OrleansP <- Orleans_P %>% filter(Orleans_P$dealer_city=="NEW ORLEANS"| Orleans_P$dealer_city=="SLIDELL"| Orleans_P$dealer_city=="DES ALLEMANDS" | Orleans_P$dealer_city=="BATON ROUGE" | Orleans_P$dealer_city=="" | Orleans_P$dealer_city=="MANDEVILLE")
+
+Orleans_cities <-Com_OrleansP[Com_OrleansP$common_name %in% SpeciesLA,]
+
+ggplot(Orleans_cities,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  geom_smooth()+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+   labs(
+    title = "Orleans Parish Fishing Communities",
+    subtitle = "Most Valuable Commercial Fish Species for Louisiana",
+    x = "Year", y = "Annual Value")+
+   theme(axis.text.x = element_text(angle=90))
+```
+
+Landings of key species in St. Bernard Parish 
+-overall landings have increased in this parish in the last decade and it seems that the increase is driven by eastern oyster
+
+
+```{r}
+
+#| echo: false
+#| warning: false
+Bernard_P <- LA %>% filter(LA$county_name=="ST. BERNARD")
+
+dealer_city<-unique(Bernard_P$dealer_city)
+order(dealer_city)
+list(dealer_city)
+
+Top10_Ber <-Bernard_P[Bernard_P$common_name %in% SpeciesLA,]
+
+
+Bernard_C <- Bernard_P %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE))
+Bernard_C[order(-Bernard_C$sum_val),]
+
+
+Com_BernardP <- Bernard_P %>% filter(Bernard_P$dealer_city=="SAINT BERNARD"| Bernard_P$dealer_city=="VIOLET"| Bernard_P$dealer_city=="DELACROIX" | Bernard_P$dealer_city=="MERAUX" | Bernard_P$dealer_city=="CHALMETTE" | Bernard_P$dealer_city== "SAINT AMANT" | Bernard_P$dealer_city== "ABBEVILLE"| Bernard_P$dealer_city== "BURAS")
+
+Bernard_cities <-Com_BernardP[Com_BernardP$common_name %in% SpeciesLA,]
+
+ggplot(Bernard_cities,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  geom_smooth()+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+   labs(
+    title = "St. Bernard Parish Fishing Communities",
+    subtitle = "Most Valuable Commercial Fish Species for Louisiana",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+
+```
+
+Next Parishes to check:
+
+Terrebonne Parish
+
+```{r}
+
+
+#county_names[str_detect(county_names, regex("terrebonne", ignore_case = T))]
+
+Terrebonne <- LA %>% filter(LA$county_name=="TERREBONNE")
+dealer_city<-unique(Terrebonne$dealer_city)
+order(dealer_city)
+list(dealer_city)
+
+Top10_Ter <-Terrebonne[Terrebonne$common_name %in% SpeciesLA,]
+
+Ter_C <- Terrebonne %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE))
+Ter_C[order(-Ter_C$sum_val),]
+
+Com_Ter <- Terrebonne %>% filter(Terrebonne$dealer_city=="DULAC"| Terrebonne$dealer_city=="CHAUVIN"| Terrebonne$dealer_city=="HOUMA" | Terrebonne$dealer_city=="THERIOT" | Terrebonne$dealer_city=="MONTEGUT" | Terrebonne$dealer_city== "BELLE CHASSE" | Terrebonne$dealer_city== "BURAS"| Terrebonne$dealer_city== "SAINT BERNARD"  | Terrebonne$dealer_city== "MORGAN CITY"| Terrebonne$dealer_city== "GOLDEN MEADOW"| Terrebonne$dealer_city== "CUT OFF" | Terrebonne$dealer_city== "BATON ROUGE" | Terrebonne$dealer_city== "COCODRIE"| Terrebonne$dealer_city== "BOURG"| Terrebonne$dealer_city== "BARATARIA"| Terrebonne$dealer_city== "VENICE"| Terrebonne$dealer_city== "GRAND ISLE")
+
+Ter_FishingCom <-Com_Ter[Com_Ter$common_name %in% SpeciesLA,]
+
+Cameron_C <- Cameron_P %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE))
+Cameron_C[order(-Cameron_C$sum_val),]
+
+ggplot(Ter_FishingCom,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T,position=position_stack())+
+    labs(
+    title = "Terrebonne Parish Fishing Communities",
+    subtitle = "Most Valuable Commercial Fish Species for Louisiana",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+
+```
+
+Vermilion Parish 
+
+```{r}
+
+Vermilion <- LA %>% filter(LA$county_name=="VERMILION") #just focus on this parish
+dealer_city<-unique(Vermilion$dealer_city)
+order(dealer_city)
+list(dealer_city)
+
+#county_names[str_detect(county_names, regex("terrebonne", ignore_case = T))]
+
+
+Top10_Ver <-Vermilion[Vermilion$common_name %in% SpeciesLA,] #select data only for the key species in La
+
+Ver_C <- Vermilion %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE)) #identify the cities with highest value of landings
+Ver_C[order(-Ver_C$sum_val),] #list them from highest landings to lowest
+
+Com_Ver <- Vermilion %>% filter(Vermilion$dealer_city=="ABBEVILLE"| Vermilion$dealer_city=="DELCAMBRE"| Vermilion$dealer_city=="LAFAYETTE" | Vermilion$dealer_city== "PERRY" )
+
+Ver_FishingCom <-Com_Ver[Com_Ver$common_name %in% SpeciesLA,]
+
+Ver_C <- Vermilion %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE))
+Ver_C[order(-Ver_C$sum_val),]
+
+ggplot(Ver_FishingCom,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Vermilion Parish Fishing Communities",
+    subtitle = "Most Valuable Commercial Fish Species for Louisiana",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+```
+
+Iberia Parish 
+
+```{r}
+
+Iberia <- LA %>% filter(LA$county_name=="IBERIA") #just focus on this parish
+dealer_city<-unique(Iberia$dealer_city)
+order(dealer_city)
+list(dealer_city)
+
+#county_names[str_detect(county_names, regex("terrebonne", ignore_case = T))]
+
+
+Top10_Iber <-Iberia[Iberia$common_name %in% SpeciesLA,] #select data only for the key species in La
+
+Iber_C <- Iberia %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE)) #identify the cities with highest value of landings
+Iber_C[order(-Iber_C$sum_val),] #list them from highest landings to lowest
+
+Iber_Com <- Iberia %>% filter(Iberia$dealer_city==""| Iberia$dealer_city=="DELCAMBRE"| Iberia$dealer_city=="NEW IBERIA" | Iberia$dealer_city== "LYDIA" )
+
+Iber_FishingCom <-Iber_Com[Iber_Com$common_name %in% SpeciesLA,]
+
+Iber_C <- Iberia %>% group_by(dealer_city) %>% summarise(sum_val = sum(value, na.rm = TRUE))
+Iber_C[order(-Iber_C$sum_val),]
+
+ggplot(Iber_FishingCom,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Iberia Parish Fishing Communities",
+    subtitle = "Most Valuable Commercial Fish Species for Louisiana",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+
+
+```
+
+Resilient Communities Categories
+
+## A. Fishing Economy Resilience - Stable trends
+
+```{r}
+Resil_D <- LA %>% filter(LA$dealer_city=="CAMERON"| LA$dealer_city=="HACKBERY"| LA$dealer_city=="MARRERO" | LA$dealer_city=="NEW ORLEANS" | LA$dealer_city=="SAINT BERNARD"| LA$dealer_city=="HOUMA"| LA$dealer_city=="DULAC"| LA$dealer_city=="ABBEVILLE")
+
+Resilient_Com_D <-Resil_D[Resil_D$common_name %in% SpeciesLA,]
+
+
+
+
+ggplot(Resilient_Com_D,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T,position=position_stack())+
+   geom_smooth()+
+    labs(
+    title = "Resilient Fishing Economies",
+    subtitle = "Mostly through diversification",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+
+```
+
+Resilient - increase
+
+```{r}
+
+Resil_I <- LA %>% filter(LA$dealer_city=="BELLE CHASSE"| LA$dealer_city=="BOOTHVILLE"| LA$dealer_city=="PORT SULPHUR" | LA$dealer_city=="VENICE" | LA$dealer_city=="SAINT BERNARD"| LA$dealer_city=="HOUMA" )
+
+Resilient_Com_I <-Resil_I[Resil_I$common_name %in% SpeciesLA,]
+
+
+
+
+ggplot(Resilient_Com_I,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+   geom_smooth()+
+    labs(
+    title = "Resilient Fishing Economies",
+    subtitle = "Increasing Trends",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+
+
+```
+
+Resilient - stable
+
+```{r}
+
+Resil_S <- LA %>% filter(LA$dealer_city=="GRAND ISLE"| LA$dealer_city=="CHAUVIN"| LA$dealer_city=="DULAC" | LA$dealer_city=="MONTEGUT" | LA$dealer_city=="THERIOT" )
+
+Resilient_Com_S <-Resil_S[Resil_S$common_name %in% SpeciesLA,]
+
+
+
+
+ggplot(Resilient_Com_S,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+   stat_smooth()+
+    labs(
+    title = "Resilient Fishing Economies",
+    subtitle = "More Stable Trends",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+```
+
+
+Not Resilient 
+```{r}
+Not_Resil <- LA %>% filter(LA$dealer_city=="LAFITTE"| LA$dealer_city=="GRETNA"| LA$dealer_city=="MARRERO" | LA$dealer_city=="CUT OFF" | LA$dealer_city=="DELCAMBRE"| LA$dealer_city=="LAFAYETTE"  )
+
+Not_Resilient <-Not_Resil[Not_Resil$common_name %in% SpeciesLA,]
+
+
+ggplot(Not_Resilient,aes(x=landed_year, y=value))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Not Very Resilient Fishing Economies",
+    subtitle = "Downward Trends",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+```
+
+
+Graphing dealer count change at the county level
+
+
+```{r}
+
+LADealer_Cnt <-LA %>% group_by(county_name, landed_year) %>% summarise(Dealer_count=length(unique(corporate_name)))
+
+Fish_Counties <- c("JEFFERSON", "PLAQUEMINES", "TERREBONNE", "CAMERON") # add all the counties I am interested here
+Select_cty <- LADealer_Cnt[LADealer_Cnt$county_name %in% Fish_Counties,]
+
+ggplot(Select_cty, aes(x=landed_year, y=Dealer_count))+
+  facet_wrap(~county_name)+
+   stat_summary(geom="bar", fun="mean",position=position_stack())+
+    labs(
+    title = "Count of Dealers",
+    subtitle = "County Level",
+    x = "Year", y = "Dealer count")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+
+
+```
+Understand relation between Dealer number with Species fished
+
+we start by grouping the data by year and county name and pipe in the dealer name
+
+
+```{r}
+
+
+LADealer_Cnt_Species <-LA %>% group_by(county_name, landed_year, common_name) %>% summarise(Dealer_count=length(unique(corporate_name))) #count per species
+
+Fish_Counties <- c("JEFFERSON", "PLAQUEMINES", "TERREBONNE", "CAMERON") # add all the counties I am interested here
+Select_cty <- LADealer_Cnt_Species[LADealer_Cnt_Species$county_name %in% Fish_Counties,]
+
+Select_cty <- Select_cty[Select_cty$common_name %in% SpeciesLA,]
+
+ggplot(Select_cty, aes(x=landed_year, y=Dealer_count))+
+  facet_wrap(~county_name)+
+   stat_summary(geom="bar", fun="sum", aes(fill=common_name),color="black",position=position_stack())+
+   stat_summary(geom="text", fun="sum", aes(group=common_name, label=Dealer_count),size=1.5, position = position_stack(vjust = 0.5))+ #hjust centers your number; size of the number on the column
+    labs(
+    title = "Count of Dealers",
+    subtitle = "County Level",
+    x = "Year", y = "Dealer count")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+
+
+```
+
+Loop
+
+```{r}
+dir.create("StateDealers") #create new folder
+wd<-paste0(getwd(), "/StateDealers/")
+
+
+state <- unique(GI$dealer_state) # when we make a loop it will use this vector(state) to loop through all the states
+
+for (i in 1:length(state)) {
+  df <- GI[GI$dealer_state==state[i],]
+  df_Cnt_Species <-df %>% group_by(county_name, landed_year, common_name) %>% summarise(Dealer_count=length(unique(corporate_name)))
+  Select_cty <- df_Cnt_Species[df_Cnt_Species$common_name %in% SpeciesLA,]
+  
+  p<-ggplot(Select_cty, aes(x=landed_year, y=Dealer_count))+
+  facet_wrap(~county_name)+
+   stat_summary(geom="bar", fun="sum", aes(fill=common_name),color="black",position=position_stack())+
+   stat_summary(geom="text", fun="sum", aes(group=common_name, label=Dealer_count),size=1.5, position = position_stack(vjust = 0.5))+     labs(
+    title = paste0("Dealer by County - ",state[i]),
+    subtitle = "County Level",
+    x = "Year", y = "Dealer count")+
+  theme(axis.text.x = element_text(angle=90))
+  print(p)
+ggsave(p,filename=paste0(wd,"DealerbyCounty_",state[i],".png"))
+  
+}
+
+state[2]
+
+LADealer_Cnt_Species <-LA %>% group_by(county_name, landed_year, common_name) %>% summarise(Dealer_count=length(unique(corporate_name))) #count per species
+
+Fish_Counties <- c("JEFFERSON", "PLAQUEMINES", "TERREBONNE", "CAMERON") # add all the counties I am interested here
+Select_cty <- LADealer_Cnt_Species[LADealer_Cnt_Species$county_name %in% Fish_Counties,]
+
+Select_cty <- Select_cty[Select_cty$common_name %in% SpeciesLA,]
+
+ggplot(Select_cty, aes(x=landed_year, y=Dealer_count))+
+  facet_wrap(~county_name)+
+   stat_summary(geom="bar", fun="sum", aes(fill=common_name),color="black",position=position_stack())+
+   stat_summary(geom="text", fun="sum", aes(group=common_name, label=Dealer_count),size=1.5, position = position_stack(vjust = 0.5))+ #hjust centers your number; size of the number on the column
+    labs(
+    title = "Count of Dealers",
+    subtitle = "County Level",
+    x = "Year", y = "Dealer count")+
+  theme(axis.text.x = element_text(angle=90))
+
+
+
+
+```
+
+
+##Identify communities using change analysis
+
+
+This code assumes a simple linear analysis, calculating the percentage change in landed pounds from one year to the next for each community. You can adjust the code based on the specific analysis or statistical methods you want to apply to identify communities with significant changes in landed pounds over the years.
+
+
+```{r}
+
+library(writexl)
+
+# Group by fish species and calculate the total adjusted value
+most_valuable <- GI %>%
+  group_by(common_name) %>%
+  summarise(total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE)) %>%
+  arrange(desc(total_adjusted_value))
+
+# Print the table of fish species sorted by total adjusted value
+print(most_valuable)
+```
+
+```{r}
+library(dplyr)
+
+Most_Val <- c("Brown Shrimp","White Shrimp","Pink Shrimp", "OYSTER, EASTERN", "MENHADENS", "CRAB, BLUE", "LOBSTER, CARIBBEAN SPINY", "CRAB, STONE", "GROUPER, RED", "SNAPPER, RED")
+
+# Create a new data frame with only the top 10 species
+top_10_data <- GI %>%
+  filter(common_name %in% Most_Val)
+
+# View the new data frame
+print(top_10_data)
+
+```
+
+
+```{r}
+
+top_10_data <- top_10_data %>%
+ filter(dealer_city != "UNKNOWN")
+
+# Group data by 'dealer_city' and summarize the total landed pounds per city, county, and state
+community_summary <- top_10_data %>%
+  group_by(landed_year,dealer_city) %>%
+  summarize(live_lbs = sum(live_lbs))
+
+# Calculate the percentage change in landed pounds for each city
+community_summary <- community_summary %>%
+  arrange(dealer_city) %>%
+  group_by(dealer_city) %>%
+  mutate(percentage_change = (live_lbs - lag(live_lbs)) / lag(live_lbs) * 100)
+
+# Sort cities based on percentage change to identify the most changing ones
+sorted_communities <- community_summary %>%
+  arrange(desc(percentage_change))
+
+# Print the top N communities with the highest percentage change
+top_n_communities <- 20  # You can change this to the desired number of top communities
+top_communities <- head(sorted_communities, top_n_communities)
+print(top_communities)
+
+# Save the top communities to an Excel file
+write_xlsx(top_communities, "top_communities.xlsx")
+
+
+
+```
+
+```{r}
+# Group data by 'dealer_city' and summarize the total landed pounds per city, county, and state
+community_summary <- top_10_data %>%
+  group_by(dealer_city, county_name, dealer_state) %>%
+  summarize(Adjusted_Val = sum(Adjusted_Val))
+
+# Calculate the percentage change in landed pounds for each city
+community_summary <- community_summary %>%
+  arrange(dealer_city) %>%
+  group_by(dealer_city) %>%
+  mutate(percentage_change = (Adjusted_Val - lag(Adjusted_Val)) / lag(Adjusted_Val) * 100)
+
+
+
+
+
+# Sort cities based on percentage change to identify the most changing ones
+sorted_communities <- community_summary %>%
+  arrange(desc(percentage_change))
+
+# Print the top N communities with the highest percentage change
+top_n_communities <- 20  # You can change this to the desired number of top communities
+top_communities <- head(sorted_communities, top_n_communities)
+print(top_communities)
+
+# Save the top communities to an Excel file
+write_xlsx(top_communities, "top_communities.xlsx")
+
+
+
+
+
+```
+
+Variablity Analysis
+
+1. Descriptive statistics
+
+```{r}
+
+summary(top_10_data$live_lbs)
+summary(top_10_data$Adjusted_Val)
+
+
+```
+
+2. Variance and Standard deviation
+
+
+```{r}
+var_live_lbs <- var(top_10_data$live_lbs)
+sd_live_lbs <- sd(top_10_data$live_lbs)
+
+var_Adjusted_Val <- var(top_10_data$Adjusted_Val)
+sd_Adjusted_Val <- sd(top_10_data$Adjusted_Val)
+
+```
+
+3. Coefficient of Variation
+
+the coefficient of variation for live_lbs shows the distance of individual data points from the mean, normalized by the mean and expressed as a percentage. This gives us insight into the relative variability of the pounds of fish landed, considering both the spread of the data and the typical value represented by the mean.
+
+```{r}
+cv_live_lbs <- sd_live_lbs / mean(GI$live_lbs) * 100 # we use the standard deviation of the variable live_lbs to measure the amount of variation or dispersion in the pounds of fish landed; the mean of live pounds represents the central tendency of the typical value of the pounds of fish landed - By taking the ratio of the standard deviation to the mean and multiplying by 100, you're expressing the relative variability as a percentage. It provides a normalized measure of dispersion, allowing you to compare the variability of different datasets regardless of their scales.
+
+
+
+cv_Adjusted_Val <- sd_Adjusted_Val / mean(GI$Adjusted_Val) * 100
+```
+
+4. Identify cities with Highest Variation 
+
+
+- sd_live_lbs = sd(live_lbs), and sd_Adjusted_Val = sd(Adjusted_Val),: These lines calculate the standard deviation of the landed pounds (live_lbs) and inflation-adjusted values (Adjusted_Val) for each dealer_city. The standard deviation measures the amount of variation or dispersion in a set of values. A higher standard deviation indicates greater variability.
+
+- cv_live_lbs = sd_live_lbs / mean(live_lbs) * 100, and cv_Adjusted_Val = sd_Adjusted_Val / mean(Adjusted_Val) * 100: These lines calculate the coefficient of variation (CV) for landed pounds and adjusted values. The coefficient of variation is the ratio of the standard deviation to the mean, expressed as a percentage. It provides a relative measure of variability, allowing you to compare the variability of different variables on a comparable scale
+
+```{r}
+city_variability <- top_10_data %>%
+  group_by(dealer_city) %>%
+  summarize(
+    county_name = first(county_name),#just adds that information and does not change the way things are summarized
+    dealer_state = first(dealer_state),
+    sd_live_lbs = sd(live_lbs),#Calculates the standard deviation of the pounds of fish landed (live_lbs) for each city.
+    cv_live_lbs = sd_live_lbs / mean(live_lbs) * 100,#Calculates the coefficient of variation for pounds of fish landed (live_lbs) for each city.
+    sd_Adjusted_Val = sd(Adjusted_Val),#Calculates the standard deviation of the inflation-adjusted values of fish landed (Adjusted_Val) for each city.
+    cv_Adjusted_Val = sd_Adjusted_Val / mean(Adjusted_Val) * 100
+  )
+```
+
+
+Identify cities with Highest Variation
+
+```{r}
+# Load the writexl library
+library(writexl)
+
+# Top N cities with highest variation in landed pounds
+top_cities_live_lbs <- city_variability %>% arrange(desc(sd_live_lbs)) %>% head(20)
+
+# Top N cities with highest variation in adjusted values
+top_cities_Adjusted_Val <- city_variability %>% arrange(desc(sd_Adjusted_Val)) %>% head(20)
+
+# Save to Excel
+write_xlsx(list(
+  "Top Cities Live Lbs" = top_cities_live_lbs,
+  "Top Cities Adjusted Val" = top_cities_Adjusted_Val
+), "top_cities_variation.xlsx")
+
+
+```
+
+
+
+```{r}
+
+library(ggplot2)
+library(readxl)
+# Read data from the Excel file
+excel_data <- read_xlsx("top_cities_variation.xlsx")
+
+# Plot for Top Cities Live Lbs
+ggplot(top_cities_variation, aes(x = reorder(dealer_city, -sd_live_lbs), y = sd_live_lbs)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Top 20 Cities with Highest Variation in Landed Pounds",
+       x = "City", y = "Standard Deviation (Live Lbs)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+exclude_city <- "MOSS POINT"
+filtered_data_live_lbs <- top_cities_variation %>% filter(dealer_city != exclude_city)
+filtered_data_Adjusted_Val <- top_cities_variation %>% filter(dealer_city != exclude_city)
+
+# Plot for Top Cities Live Lbs (excluding Moss Point)
+ggplot(filtered_data_live_lbs, aes(x = reorder(dealer_city, -sd_live_lbs), y = sd_live_lbs)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Top 20 Cities with Highest Variation in Landed Pounds (Excluding Moss Point)",
+       x = "City", y = "Standard Deviation (Live Lbs)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+# Plot for Top Cities Adjusted Val
+ggplot(top_cities_variation, aes(x = reorder(dealer_city, -sd_Adjusted_Val), y = sd_Adjusted_Val)) +
+  geom_bar(stat = "identity", fill = "lightcoral") +
+  labs(title = "Top 20 Cities with Highest Variation in Adjusted Values",
+       x = "City", y = "Standard Deviation (Adjusted Val)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+Now I can start doing a trend analysis for all of these cities
+
+1. Highest change coefficient based on Inflation Adjusted Values
+
+EMPIRE
+MOSS POINT
+ARANSAS PASS
+BROWNSVILLE
+NUECES
+PORT ARTHUR
+PORT ISABEL
+PALACIOS
+ESCATAWPA
+MERRITT ISLAND
+BAYOU LA BATRE
+LOS FRESNOS
+CROWN POINT
+BOLIVAR PENINSULA
+PORT BOLIVAR
+PORT CANAVERAL
+SAN LEON
+FULTON
+BILOXI
+PORT LAVACA
+
+
+
+Method 2 foridentifying change: Cluster Analysis
+
+Cluster Analysis:
+
+Apply clustering techniques to group communities based on the temporal patterns of fish landing values. Communities in clusters with high variability may have experienced dramatic changes.
+
+
+```{r}
+names(GI)
+
+
+```
+
+```{r}
+# Assuming your dataframe is named GI
+# Load necessary libraries
+library(dplyr)
+
+# Select relevant columns
+selected_columns <- c("landed_year", "dealer_state", "county_name", "dealer_city", "common_name", "Adjusted_Val")
+df_selected <- GI[, selected_columns]
+
+# Pivot the data to have years as rows and cities as columns
+pivot_table <- df_selected %>%
+  group_by(landed_year, dealer_city, dealer_state, county_name) %>%
+  summarize(total_adjusted_val = sum(Adjusted_Val)) %>%
+  spread(landed_year, total_adjusted_val, fill = 0)
+
+# Transpose the pivot table for clustering (cities as rows, years as columns)
+pivot_table_transposed <- as.data.frame(t(pivot_table[, -c(2:4)]))
+
+# Select only numeric columns for scaling
+numeric_columns <- sapply(pivot_table_transposed, is.numeric)
+if (any(numeric_columns)) {
+  scaled_data <- scale(pivot_table_transposed[, numeric_columns])
+  
+  # Determine the number of unique data points
+  num_unique_points <- length(unique(scaled_data))
+  
+  # Adjust the number of clusters
+  num_clusters <- min(5, num_unique_points)  # Adjust as needed
+  
+  # Ensure at least one cluster if the number of unique points is less than 5
+  num_clusters <- max(1, num_clusters)
+  
+  # Check if the number of clusters is greater than the number of unique points
+  if (num_clusters > num_unique_points) {
+    num_clusters <- num_unique_points
+  }
+  
+  # Apply K-Means clustering
+  kmeans_result <- kmeans(scaled_data, centers = num_clusters, nstart = 5)
+  
+  # Add cluster assignment to the original data
+  pivot_table_transposed$cluster <- kmeans_result$cluster
+  
+  # Calculate variability for each city
+  pivot_table_transposed$variability <- apply(scaled_data, 1, sd)
+  
+  # Identify top 15 communities with high variability
+  top_15_variability <- pivot_table_transposed %>%
+    mutate(dealer_city = rownames(pivot_table_transposed),
+           dealer_state = df_selected$dealer_state[match(rownames(pivot_table_transposed), df_selected$dealer_city)],
+           county_name = df_selected$county_name[match(rownames(pivot_table_transposed), df_selected$dealer_city)]) %>%
+    arrange(desc(variability)) %>%
+    slice(1:15) %>%
+    select(dealer_city, dealer_state, county_name, cluster, variability)
+  
+  # Display the top 15 communities
+  print(top_15_variability)
+} else {
+  print("No numeric columns for scaling.")
+}
+
+
+```
+
+
+
+
+
+EMPIRE - Plaquemines _ LA
+
+
+```{r}
+#| warning: false
+Empire <- LA %>% filter(LA$dealer_city=="EMPIRE")
+Empire <-Empire[Empire$common_name %in% SpeciesLA,]
+
+ggplot(Empire,aes(x=landed_year, y=Adjusted_Val))+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Most Valuable Commercial Species",
+    subtitle = "EMPIRE, Plaqurmines",
+    x = "Year", y = "Annual Value", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+ggsave( "Empire.jpg", plot = last_plot(),  path = "~/Resilience/")
+
+```
+
+
+
+```{r}
+EmpireS <-Empire[Empire$common_name %in% ShrimpLA,]
+ggplot(EmpireS,aes(x=landed_year, y=Adjusted_Val))+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Shrimp Species",
+    subtitle = "EMPIRE, Plaqurmines",
+    x = "Year", y = "Annual Value", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+
+EmpireO <-Empire[Empire$common_name %in% Other,]
+```
+
+
+```{r}
+ggplot(EmpireO,aes(x=landed_year, y=Adjusted_Val))+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Most Valuable Commercial Species - No Shrimp",
+    subtitle = "EMPIRE, Plaqurmines",
+    x = "Year", y = "Annual Value", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+
+```
+
+
+In this example, geom_smooth with method = "gam" is used to add a GAM smoother to each facet of your plot. The formula argument (y ~ s(x)) specifies a smooth term for the variable x (landed_year). The se = FALSE argument is used to suppress the display of a shaded confidence interval around the GAM smoother.
+
+The mgcv package provides a flexible framework for fitting GAMs, allowing you to capture non-linear relationships between variables. Adjust the formula argument and other parameters within the gam function based on your specific analysis needs.
+
+
+```{r}
+#Empire_Fig %>% select(landed_year,dealer_id, corporate_name, county_name, dealer_city, live_lbs, Adjusted_Val)
+#install.packages("tidyr")
+library(tidyr)
+
+
+Empire_Fig <- Empire %>% select (landed_year, dealer_id, corporate_name, county_name, dealer_city, common_name, live_lbs, Adjusted_Val) %>% pivot_longer(cols = c(live_lbs, Adjusted_Val), names_to ="Var_names" , values_to ="Numeric_Val")#pivot longer; basically I created a column that just explains the name for Live_LBs and Adjusted Values; this is so you can easily compare pounds and values; look into long format - explaining tidyverse. 
+
+library(dplyr)
+
+Empire_Fig_filtered <- Empire_Fig %>%
+  filter(common_name %in% c("White Shrimp", "Brown Shrimp"))
+
+library(mgcv)
+
+ggplot(Empire_Fig_filtered, aes(x=landed_year, y=Numeric_Val))+
+  facet_wrap(~common_name, ncol=1)+
+  stat_summary(geom="line", fun="sum",aes(color=Var_names))+
+  #geom_smooth(method = "gam", formula = y ~ s(x), se = FALSE) +  # Add GAM smoother
+  scale_x_continuous(breaks = seq(min(Empire_Fig_filtered$landed_year), max(Empire_Fig_filtered$landed_year), by = 2))+
+  scale_color_manual(values = c("live_lbs" = "blue", "Adjusted_Val" = "red"),
+                     labels = c("live_lbs" = "Pounds", "Adjusted_Val" = "Value")) +
+  labs(title = "Trends for Empire City, LA",
+       color = "Legend",
+       y = "",
+       x = "Year",
+       caption = "Data source: ")
+
+```
+
+Identifying significant thresholds in your data typically involves statistical testing or analysis. One common approach is to perform a segmented regression analysis or change-point analysis. This type of analysis helps identify points in your data where there is a significant change in the relationship between variables.
+
+Here's a general outline of how you might approach this using R:
+
+Fit a Segmented Regression Model:
+Use a statistical package like segmented to fit a segmented regression model to your data. This package can identify points in your data where there's a significant change in the slope.
+
+```{r}
+
+# Install and load the segmented package
+#install.packages("segmented")
+library(segmented)
+# Fit a segmented regression model
+seg_model <- lm(Adjusted_Val ~ landed_year, data = Empire)
+seg_fit <- segmented(seg_model)
+
+# Extract breakpoints
+breakpoints <- attributes(seg_fit)$psi
+breakpoints
+
+```
+
+```{r}
+# Install and load the segmented package
+#install.packages("segmented")
+library(segmented)
+# Fit a segmented regression model
+seg_model <- lm(live_lbs ~ landed_year, data = Empire)
+seg_fit <- segmented(seg_model)
+
+# Extract breakpoints
+breakpoints <- attributes(seg_fit)$psi
+breakpoints
+```
+
+
+
+
+
+Identify Significant Breakpoints:
+Extract the breakpoints from the segmented model, which indicate the points where there is a significant change in the relationship between landed_year and Numeric_Val.
+
+2. Visualize the Segmented Regression Model:
+
+This code creates a scatter plot of the data and overlays the segmented regression model on top. The red lines represent the fitted segmented regression.
+
+```{r}
+# Plot the data and segmented regression model
+plot(Empire$landed_year, Empire$Adjusted_Val, 
+     main = "Segmented Regression Model for Fish Landed Values",
+     xlab = "Year", ylab = "Adjusted_Val")
+lines(seg_fit, col = "red")
+
+
+```
+
+
+
+```{r}
+# Plot the data and segmented regression model
+plot(Empire$landed_year, Empire$live_lbs, 
+     main = "Segmented Regression Model for Fish Landed Values",
+     xlab = "Year", ylab = "Landed Pounds")
+lines(seg_fit, col = "red")
+
+
+
+```
+
+
+
+
+
+```{r}
+# Check residuals vs fitted values
+plot(seg_fit)
+```
+
+
+
+
+
+```{r}
+# Investigate changes at breakpoints
+summary(seg_fit)
+
+
+
+```
+
+
+##2. MOSS POINT, Jackson MS - CV for Values = 360
+
+A. Overall trends
+
+
+
+```{r}
+
+MS <- GI %>% 
+      filter(dealer_state =='MS')
+
+Sum_by_SpeciesMS <- MS %>% group_by(species_itis, common_name) %>% summarise(sum_lbs = sum(live_lbs, na.rm = TRUE))
+Sum_by_SpeciesMS[order(-Sum_by_SpeciesMS$sum_lbs),]
+
+Sum_by_Species_valMS <- MS %>% group_by(species_itis, common_name) %>% summarise(sum_val = sum(Adjusted_Val, na.rm = TRUE))
+Sum_by_Species_valMS[order(-Sum_by_Species_valMS$sum_val),]
+
+SpeciesMS <- c("MENHADENS", "Brown Shrimp","White Shrimp", "OYSTER, EASTERN","SNAPPER, RED", "CRAB, BLUE","Pink Shrimp", "FISHES, BONY","MULLET, STRIPED", "SNAPPER, VERMILION")
+
+```
+
+
+```{r}
+#| warning: false
+#overall picture for all species
+head(LA$dealer_city)
+library(dplyr)
+MS <- GI %>% filter(GI$dealer_state=="MS")
+MossP <- MS %>% filter(MS$dealer_city=="MOSS POINT")
+MossP <-MossP[MossP$common_name %in% SpeciesLA,]
+
+ggplot(MossP,aes(x=landed_year, y=Adjusted_Val))+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Most Valuable Commercial Species",
+    subtitle = "MOSS POINT, MS",
+    x = "Year", y = "Annual Value", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+ggsave( "Moss Point.jpg", plot = last_plot(),  path = "~/Resilience/")
+
+```
+
+B. 
+
+```{r}
+EmpireS <-Empire[Empire$common_name %in% ShrimpLA,]
+ggplot(EmpireS,aes(x=landed_year, y=Adjusted_Val))+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Shrimp Species",
+    subtitle = "EMPIRE, Plaqurmines",
+    x = "Year", y = "Annual Value", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+
+EmpireO <-Empire[Empire$common_name %in% Other,]
+```
+
+
+```{r}
+ggplot(EmpireO,aes(x=landed_year, y=Adjusted_Val))+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Most Valuable Commercial Species - No Shrimp",
+    subtitle = "EMPIRE, Plaqurmines",
+    x = "Year", y = "Annual Value", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+
+```
+
+
+In this example, geom_smooth with method = "gam" is used to add a GAM smoother to each facet of your plot. The formula argument (y ~ s(x)) specifies a smooth term for the variable x (landed_year). The se = FALSE argument is used to suppress the display of a shaded confidence interval around the GAM smoother.
+
+The mgcv package provides a flexible framework for fitting GAMs, allowing you to capture non-linear relationships between variables. Adjust the formula argument and other parameters within the gam function based on your specific analysis needs.
+
+
+```{r}
+#Empire_Fig %>% select(landed_year,dealer_id, corporate_name, county_name, dealer_city, live_lbs, Adjusted_Val)
+#install.packages("tidyr")
+library(tidyr)
+
+
+Empire_Fig <- Empire %>% select (landed_year, dealer_id, corporate_name, county_name, dealer_city, common_name, live_lbs, Adjusted_Val) %>% pivot_longer(cols = c(live_lbs, Adjusted_Val), names_to ="Var_names" , values_to ="Numeric_Val")#pivot longer; basically I created a column that just explains the name for Live_LBs and Adjusted Values; this is so you can easily compare pounds and values; look into long format - explaining tidyverse. 
+
+library(dplyr)
+
+Empire_Fig_filtered <- Empire_Fig %>%
+  filter(common_name %in% c("White Shrimp", "Brown Shrimp"))
+
+library(mgcv)
+
+ggplot(Empire_Fig_filtered, aes(x=landed_year, y=Numeric_Val))+
+  facet_wrap(~common_name, ncol=1)+
+  stat_summary(geom="line", fun="sum",aes(color=Var_names))+
+  #geom_smooth(method = "gam", formula = y ~ s(x), se = FALSE) +  # Add GAM smoother
+  scale_x_continuous(breaks = seq(min(Empire_Fig_filtered$landed_year), max(Empire_Fig_filtered$landed_year), by = 2))+
+  scale_color_manual(values = c("live_lbs" = "blue", "Adjusted_Val" = "red"),
+                     labels = c("live_lbs" = "Pounds", "Adjusted_Val" = "Value")) +
+  labs(title = "Trends for Empire City, LA",
+       color = "Legend",
+       y = "",
+       x = "Year",
+       caption = "Data source: ")
+
+```
+
+```
+
+
+
+```{r}
+
+```
+

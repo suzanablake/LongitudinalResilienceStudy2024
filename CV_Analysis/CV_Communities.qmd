@@ -1,0 +1,474 @@
+---
+title: "Coefficient of Variation"
+author: "Suzana Blake"
+output:
+  dir: "~/Resilience/CV_Analysis/Output/"
+  selfContained: true
+  figures: "~/Resilience/CV_Analysis/Figures/"
+  pdf:
+    default: true
+  html:
+    default: true
+    toc: true
+---
+
+
+#**Method Description:**
+Coefficient of Variation (CV):
+
+The Coefficient_of_Variation is a measure of relative variability and is calculated as the standard deviation divided by the mean, expressed as a percentage. In the context of your analysis, a higher Coefficient_of_Variation indicates greater relative variability in the Total_Val values over the years for a particular city.
+
+So, the resulting DataFrame high_variability_cities gives you a list of cities where the landed fish values have the highest year-to-year variability based on the calculated coefficient of variation. Cities with higher values in this DataFrame are those that experience more significant fluctuations in the total landed fish values from one year to the next.
+
+A coefficient of variation (CV) value of 100.6 for a city indicates a relatively high degree of variability in the context of your data. The coefficient of variation is expressed as a percentage and is calculated as the standard deviation divided by the mean, multiplied by 100.
+
+Mathematically, CV is calculated using the formula:
+
+**CV=(SDMean)×100CV=( MeanSD​ )×100**
+
+Here:
+
+SD is the standard deviation of the variable of interest (e.g., total landed fish values for a city).
+Mean is the mean (average) of the variable.
+A CV value greater than 100% implies that the standard deviation is larger than the mean, indicating substantial relative variability. It suggests that the data points (total landed fish values) are widely spread out from the mean, which could be due to fluctuations or volatility in the values over time.
+
+In practical terms, a CV value of 100.6 indicates that the variability in the total landed fish values for that city is substantial, and the mean may not be a reliable summary measure on its own. Analysts often use the CV to assess the relative dispersion or stability of a variable, and a higher CV suggests higher relative variability.
+
+Note: When calculating the coefficient of variation (CV) for a city, the mean (average) is computed based on the values available for that specific city across the years where data is available. It doesn't consider data from other cities or years.
+
+<u>What constitutes Low and High Variability?</u>
+
+
+**Low Variability:**
+
+In many cases, a CV below 10% is considered relatively low variability. This implies that the standard deviation is small compared to the mean, suggesting that the values are closely clustered around the average.
+
+**Moderate Variability:**
+
+A CV between 10% and 30% is often considered moderate variability. It indicates a moderate level of dispersion around the mean.
+
+**High Variability:**
+
+A CV above 30% is generally considered high variability. This suggests that the values are more spread out, and there is a substantial degree of fluctuation relative to the mean.
+
+**Dataset-specific Considerations:**
+
+The definition of low variability can vary depending on the nature of the data and the specific industry or field. Some datasets inherently have higher variability due to the nature of the measurements.
+
+**This is what where we need to have a conversation about how we will define high and low variability** because as you will see in the analysis below most of the data points have variability that would be considered by general standards to be moderate to high variability. 
+
+##**Data organization**
+
+```{r}
+#| echo: false
+#| warning: false
+
+library("tidyverse")
+library("here")
+library("skimr")
+library("janitor")
+library("dplyr")
+library("ggplot2")
+#Install and load the knitr package if you haven't already
+#install.packages(c("knitr", "kableExtra"))
+# Unload packages that import the 'knitr' namespace
+unloadNamespace("skimr")
+#unloadNamespace("rmarkdown")
+unloadNamespace("kableExtra")
+
+# Unload the 'knitr' package
+#unloadNamespace("knitr")
+
+
+library("knitr")
+library("kableExtra")
+
+
+options(scipen = 999) # takes away the scientific notation 
+```
+Load Inflation Adjusted Data
+```{r setup, include=FALSE}
+# Load the GI data - with inflation adjusted values
+GI <- readRDS("~/Resilience/UpdatedData/GI.RData")
+
+```
+Brief summary
+```{r}
+# Display a summary of the GI data
+summary(GI)
+
+# Create a plot using the GI data
+plot(GI$landed_year, GI$Adjusted_Val, type = "l", main = "Adjusted Value Over Time")
+
+```
+###Clean and group the Species names
+```{r clean, include=FALSE}
+com_names<-unique(GI$common_name)
+order(com_names)
+list(com_names)
+com_names[str_detect(com_names, regex("MENHADENS", ignore_case = T))]
+com_names[str_detect(com_names, regex("MENHADEN", ignore_case = F ))]
+com_names[str_detect(com_names, regex("GROUPERS", ignore_case = T ))]
+com_names[str_detect(com_names, regex("GROUPER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("SNAPPER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("OYSTER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("CRAB,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("STONE", ignore_case = T ))]
+com_names[str_detect(com_names, regex("CRAB, BLUE", ignore_case = T ))]
+com_names[str_detect(com_names, regex("LOBSTER", ignore_case = T ))]
+
+
+GI <- GI %>%
+  mutate(common_name_cleaned = case_when(
+    grepl("GROUPER,\\s*(WARSAW|GAG|YELLOWEDGE|RED|BLACK|YELLOWFIN|SNOWY|NASSAU|YELLOWMOUTH|MISTY|TIGER|MARBLED|HIND RED|SCAMP|SPECKLED HIND|CONEY)", common_name, ignore.case = TRUE) ~ "Grouper",
+    grepl("SNAPPER,\\s*(RED|GRAY|VERMILION|MUTTON|LANE|YELLOWTAIL|SILK|CUBERA|BLACKFIN|QUEEN|GLASSEYE|DOG|BLACK|MAHOGANY|CARIBBEAN RED)", common_name, ignore.case = TRUE) ~ "Snapper",
+    grepl("CRAB,\\s*(FLORIDA STONE|STONE)", common_name, ignore.case = TRUE) ~ "Stone Crab",
+    grepl("CRABS,\\s*(FLORIDA STONE|STONE)", common_name, ignore.case = TRUE) ~ "Stone Crab",
+    grepl("CRABS,\\s*(BLUE LAND|BLUE)", common_name, ignore.case = TRUE) ~ "Blue Crab",
+    grepl("CRAB,\\s*(BLUE LAND|BLUE)", common_name, ignore.case = TRUE) ~ "Blue Crab",
+    grepl("LOBSTER,\\s*(CARIBEAN SPINY|SPINY|SPOTTED SPINY|SPANISH|)", common_name, ignore.case = TRUE) ~ "Spiny Lobster",
+    TRUE ~ common_name
+  ))
+
+```
+
+## Most Valuable Species
+Identify the most Valuable Commercial Fish Species landed in the Gulf of Mexico
+
+```{r}
+
+# Group by fish species and calculate the total adjusted value
+most_valuable <- GI %>%
+  group_by(common_name_cleaned) %>%
+  summarise(total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE)) %>%
+  arrange(desc(total_adjusted_value))
+# Select the top 10 species
+MostValuable10 <- head(most_valuable, 10)
+#install.packages(c("shiny", "shinydashboard"))
+library(shiny)
+# Print the table of the top 10 fish species sorted by total adjusted value
+MostValuable10 %>%
+  kable("html", col.names = c("Fish Species", "Total Adjusted Value"), align = "c") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE, position = "center") %>%
+  column_spec(1, width = "70%") %>%
+  column_spec(2, width = "30%") %>%
+  cat()
+
+MostValuable10
+
+
+```
+##Top 10 most valuable species
+```{r}
+library(dplyr)
+
+Most_Val <- c("Brown Shrimp","White Shrimp","Pink Shrimp", "OYSTER, EASTERN", "Blue Crab", "Spiny Lobster", "Stone Crab", "Snapper", "Grouper") # excluded Menhadens
+
+# Create a new data frame with only the top 10 species
+top_10_data <- GI %>%
+  filter(common_name_cleaned %in% Most_Val) # this has over 50,000 records which is much smaller than the original data file which has so many more species
+head(top_10_data)
+
+unique_species <- unique(top_10_data$common_name_cleaned)
+print(unique_species)
+# Specify the file path and name
+file_path <- "~/Resilience/UpdatedData/top_10_data.rds"
+
+# Save the data frame to an RDS file
+saveRDS(top_10_data, file = file_path)
+
+```
+
+###Group by Year and City
+This will give you the cumulative inflation-adjusted values for each city in each year.
+A. Select only needed columns to avoid multiplication 
+```{r}
+library(dplyr)
+
+# Step 1: Filter out rows with NA in dealer_city
+top_10_data <- top_10_data %>%
+  filter(dealer_city != "#N/A", !is.na(dealer_city))  # Exclude rows with *N/A and NAs in dealer_city
+
+top_10_data <- top_10_data %>%
+  filter(dealer_city != "UNRESOLVED" & dealer_city != "UNKNOWN")
+
+
+# Step 2: Filter for values greater than 1 in Adjusted_Val
+top_10_data <- top_10_data %>%
+  filter(Adjusted_Val > 1 & !is.na(Adjusted_Val))
+
+#aggregate data from the dealer level to the city level
+City_aggregation<- top_10_data %>%
+  group_by(landed_year, dealer_state, dealer_city) %>%
+  summarise(
+    total_live_lbs = sum(live_lbs),
+    total_value = sum(value),
+    total_adjusted_val = sum(Adjusted_Val)
+  )
+
+
+# Print the aggregated and percentage change data
+print(City_aggregation)
+
+
+# Save the selected data to a new file (e.g., CSV format)
+write.csv(City_aggregation, "City_aggregation.csv", row.names = FALSE)
+
+
+```
+
+
+# A.Identify Cities with High Variation
+##1.Values:Calculate Coefficient of Variation for Total Landed Values
+Calculate the coefficient of variation for each city using the grouped data. The coefficient of variation is the ratio of the standard deviation to the mean, multiplied by 100.
+
+```{r}
+cv_data <- City_aggregation %>%
+  group_by(dealer_city, dealer_state) %>%
+  filter(n() >= 10) %>%  # Keep groups with 10 or more data points for years
+  summarize(
+    Mean_Total_Val = mean(total_adjusted_val, na.rm = TRUE),
+    SD_Total_Val = sd(total_adjusted_val, na.rm = TRUE),
+    Coefficient_of_Variation = ifelse(!is.na(SD_Total_Val), round((SD_Total_Val / Mean_Total_Val) * 100, 2), NA)
+  )
+
+```
+
+Identify Cities with High Variability
+
+
+
+##Identify Cities with High Variability in Landed Values
+```{r}
+high_variability_cities <- cv_data[order(-cv_data$Coefficient_of_Variation), ]
+library(openxlsx)
+
+# Specify the full file path and name
+file_path <- "C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/high_variability_cities.xlsx"
+
+# Write the DataFrame to an Excel file
+write.xlsx(high_variability_cities, file_path, rowNames = FALSE)
+```
+##Graphical Representation
+Bar Plot
+```{r}
+library(ggplot2)
+
+# Filter cities with CV > 100
+high_cv_cities <- subset(high_variability_cities, Coefficient_of_Variation > 100)
+
+# Bar plot for cities with high CV, facet by state
+HighCV <- ggplot(high_cv_cities, aes(x = reorder(dealer_city, -Coefficient_of_Variation), y = Coefficient_of_Variation)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Cities with CV > 100", x = "City", y = "Coefficient of Variation") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ dealer_state, scales = "free")
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/CV_Analysis/Figures/HighCV.png", plot = HighCV, width = 14, height = 6, units = "in")
+
+
+```
+
+
+Bar plot for FL and LA: High - Values
+
+```{r}
+# Filter FL and LA
+fl_la_cities <- subset(high_cv_cities, dealer_state %in% c("FL", "LA"))
+
+# Bar plot for FL and LA
+FL_LA_CV<-ggplot(fl_la_cities, aes(x = reorder(dealer_city, -Coefficient_of_Variation), y = Coefficient_of_Variation)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Cities with CV > 100 (FL and LA only)", x = "City", y = "Coefficient of Variation") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ dealer_state, scales = "free")
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/CV_Analysis/Figures/FL_LA.png", plot = FL_LA_CV, width = 14, height = 6, units = "in")
+
+```
+
+Bar plot for Moderate Variability: High - Values
+```{r}
+moderate_CV_val <- subset(high_variability_cities, Coefficient_of_Variation > 30 & Coefficient_of_Variation <= 100)
+
+# Bar plot for cities with high CV, facet by state
+ggplot(moderate_CV_val, aes(x = reorder(dealer_city, -Coefficient_of_Variation), y = Coefficient_of_Variation)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Cities with Moderate CV between 30% and 100%", x = "City", y = "Coefficient of Variation") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ dealer_state, scales = "free")
+```
+
+Bar plot for FL and LA: moderate variability
+```{r}
+# Filter FL and LA
+fl_la_cities_M <- subset(moderate_CV_val, dealer_state %in% c("FL", "LA"))
+# Bar plot for FL and LA
+ggplot(fl_la_cities_M, aes(x = reorder(dealer_city, -Coefficient_of_Variation), y = Coefficient_of_Variation)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Cities with  Moderate CV between 30% and 100%", x = "City", y = "Coefficient of Variation") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ dealer_state, scales = "free")
+
+```
+
+
+Bar plot for FL and LA: low variability
+```{r}
+low_cv_cities <- subset(high_variability_cities, Coefficient_of_Variation < 40)
+
+
+
+# Bar plot for FL and LA
+lowCV_Val <- ggplot(low_cv_cities, aes(x = reorder(dealer_city, -Coefficient_of_Variation), y = Coefficient_of_Variation)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Cities with  Low CV - less than 40% for Values", x = "City", y = "Coefficient of Variation: Values") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+   facet_wrap(~ dealer_state, scales = "free")
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/CV_Analysis/Figures/LowCV_Val.png", plot = lowCV_Val, width = 14, height = 6, units = "in")
+
+```
+
+
+
+
+
+
+
+
+
+
+## 2.Calculate Coefficient of Variation for Total Landed Pounds
+
+```{r}
+cv_lbs <- City_aggregation %>%
+  group_by(dealer_city, dealer_state) %>%
+  filter(n() >= 10) %>%  # Keep groups with 10 or more data points for years
+  summarize(
+    Mean_Total_lbs = mean(total_live_lbs, na.rm = TRUE),
+    SD_Total_lbs = sd(total_live_lbs, na.rm = TRUE),
+    CoefVar_lbs = ifelse(!is.na(SD_Total_lbs), round((SD_Total_lbs / Mean_Total_lbs) * 100, 2), NA)
+  )
+
+```
+
+##Identify Cities with High Variability: Pounds
+
+```{r}
+high_cities_LBS <- cv_lbs[order(-cv_lbs$CoefVar_lbs), ]
+
+library(openxlsx)
+
+# Specify the full file path and name
+file_path <- "C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/high_cities_LBS.xlsx"
+
+# Write the DataFrame to an Excel file
+write.xlsx(high_cities_LBS, file_path, rowNames = FALSE)
+```
+
+##Graphical Representation
+Bar Plot High variability for Pounds Landed
+
+```{r}
+
+library(ggplot2)
+
+# Filter cities with CV > 100
+cv_cities_lbs <- subset(high_cities_LBS, CoefVar_lbs > 100)
+
+
+# Bar plot for cities with high CV, facet by state
+ggplot(cv_cities_lbs, aes(x = reorder(dealer_city, -CoefVar_lbs), y = CoefVar_lbs)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Cities with CV > 100", x = "City", y = "Coefficient of Variation for Landed Pounds") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ dealer_state, scales = "free")
+```
+
+
+Bar plot for FL and LA: High Variability Pounds Landed
+```{r}
+# Filter FL and LA
+fl_la_cities_lbs <- subset(cv_cities_lbs, dealer_state %in% c("FL", "LA"))
+
+# Bar plot for FL and LA
+ggplot(fl_la_cities_lbs, aes(x = reorder(dealer_city, -CoefVar_lbs), y = CoefVar_lbs)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Cities with CV > 100 (FL and LA only)", x = "City", y = "Coefficient of Variation for Landed Pounds") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ dealer_state, scales = "free")
+```
+
+
+# B. Identify Cities with Low Variability
+##1.Value of Landed Fish 
+
+```{r}
+# Sort the DataFrame in descending order based on Coefficient_of_Variation
+sorted_low_variability_cities <- cv_data[order(cv_data$Coefficient_of_Variation, decreasing = TRUE), ]
+
+# Filter cities with CV equal or smaller than 60
+low_variability_cities <- sorted_low_variability_cities[sorted_low_variability_cities$Coefficient_of_Variation <= 40, ]
+
+# Specify the full file path and name for the low variability cities
+file_path_low_variability <- "C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/low_variability_cities.xlsx"
+
+# Write the DataFrame to an Excel file
+library(openxlsx)
+write.xlsx(low_variability_cities, file_path_low_variability, rowNames = FALSE)
+
+```
+##Graphical Representation: low variability 
+Bar Plot
+```{r}
+
+# Bar plot for cities with low CV, facet by state
+LowVar_val <- ggplot(low_variability_cities, aes(x = reorder(dealer_city, Coefficient_of_Variation), y = Coefficient_of_Variation)) +
+  geom_bar(stat = "identity", fill = "green", alpha = 0.7) +
+  labs(title = "Cities with Low Variability or a CV <= 40", x = "City", y = "Coefficient of Variation") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ dealer_state, scales = "free")
+
+ggsave("~/Resilience/CV_Analysis/Figures/Lowvar_Val.png", plot = LowVar_val, width = 14, height = 6, units = "in")
+
+
+```
+##1.Pounds of Landed Fish: Low variability
+
+```{r}
+#Sort the DataFrame in descending order based on Coefficient_of_Variation
+sorted_low_variability_cities_LBS <- cv_lbs[order(cv_lbs$CoefVar_lbs, decreasing = TRUE), ]
+
+# Filter cities with CV equal or smaller than 60
+low_variability_cities_LBS <- sorted_low_variability_cities_LBS[sorted_low_variability_cities_LBS$CoefVar_lbs <= 40, ]
+
+library(openxlsx)
+
+# Specify the full file path and name
+file_path <- "C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/low_variability_cities_LBS.xlsx"
+
+# Write the DataFrame to an Excel file
+write.xlsx(low_variability_cities_LBS, file_path, rowNames = FALSE)
+```
+
+##Graphical Representation
+Bar Plot
+
+```{r}
+
+library(ggplot2)
+
+# Bar plot for cities with high CV, facet by state
+ggplot(low_variability_cities_LBS, aes(x = reorder(dealer_city, -CoefVar_lbs), y = CoefVar_lbs)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Cities with Low relative Variability or CV <= 40", x = "City", y = "Coefficient of Variation for Landed Pounds") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ dealer_state, scales = "free")
+
+```
+
+

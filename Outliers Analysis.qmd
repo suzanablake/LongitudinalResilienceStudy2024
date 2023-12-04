@@ -1,0 +1,480 @@
+---
+title: "Identifying Communities for Resilience Analysis"
+author: "Suzana B"
+format: html
+editor: visual
+---
+
+## Variablity and Stability Analysis
+
+```{r}
+#| echo: false
+#| warning: false
+
+library("tidyverse")
+library("here")
+library("skimr")
+library("janitor")
+library("dplyr")
+library("ggplot2")
+
+options(scipen = 999) # takes away the scientific notation 
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+
+GOM <- read.csv("~/Resilience/DATA\\Final_GOM_Dealers_Data.csv", header=T, skip=0, sep=",", quote="\"", stringsAsFactors = F)
+
+glimpse(GOM)
+names(GOM)
+head(GOM)
+knitr::kable(
+  GOM[1:6, 1:12]
+)
+
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+##Adjustment of Values to 2020 -attach Christopher's documentation
+
+```{r}
+#| echo: false
+
+GOM$X <- NULL #deletes the X column 
+GOM
+
+Inflation <- read.csv("InflationAdj.csv")
+Infl_2020 <- Inflation[Inflation$landed_year==2020,][,2] #this is a dataframe to use to adjust the value to 2020
+
+Infl_2020 <- Inflation[Inflation$Year==2020,][,2]
+# next we are adding the inflation index values to our master file - left joing by year
+#first make sure the column names are the same; so changing "Year" to landed_year"
+
+colnames(Inflation)[1]<-"landed_year" 
+#left join - look into dplyer
+GOM_I<- left_join (GOM,Inflation)
+
+GI <- GOM_I %>% mutate(Adjust_factor=Infl_2020/Inflation_index, Adjusted_Val=round(Adjust_factor*value,0)) #created a new column with the operation for Infl adjustement and then rounded the results
+
+
+
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+##Clean and group the Species names - need to work on this - I need Brendan's help with this - have him check it when it's done - also bring the code from "Communities Identified" that helps me identify all the "grouper" instances...
+
+```{r}
+com_names<-unique(GI$common_name)
+order(com_names)
+list(com_names)
+com_names[str_detect(com_names, regex("MENHADENS", ignore_case = T))]
+com_names[str_detect(com_names, regex("MENHADEN", ignore_case = F ))]
+com_names[str_detect(com_names, regex("GROUPERS", ignore_case = T ))]
+com_names[str_detect(com_names, regex("GROUPER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("SNAPPER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("OYSTER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("CRAB,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("STONE", ignore_case = T ))]
+com_names[str_detect(com_names, regex("CRAB, BLUE", ignore_case = T ))]
+com_names[str_detect(com_names, regex("LOBSTER", ignore_case = T ))]
+
+
+GI <- GI %>%
+  mutate(common_name_cleaned = case_when(
+    grepl("GROUPER,\\s*(WARSAW|GAG|YELLOWEDGE|RED|BLACK|YELLOWFIN|SNOWY|NASSAU|YELLOWMOUTH|MISTY|TIGER|MARBLED|HIND RED|SCAMP|SPECKLED HIND|CONEY)", common_name, ignore.case = TRUE) ~ "Grouper",
+    grepl("SNAPPER,\\s*(RED|GRAY|VERMILION|MUTTON|LANE|YELLOWTAIL|SILK|CUBERA|BLACKFIN|QUEEN|GLASSEYE|DOG|BLACK|MAHOGANY|CARIBBEAN RED)", common_name, ignore.case = TRUE) ~ "Snapper",
+    grepl("CRAB,\\s*(FLORIDA STONE|STONE)", common_name, ignore.case = TRUE) ~ "Stone Crab",
+    grepl("CRABS,\\s*(FLORIDA STONE|STONE)", common_name, ignore.case = TRUE) ~ "Stone Crab",
+    grepl("CRABS,\\s*(BLUE LAND|BLUE)", common_name, ignore.case = TRUE) ~ "Blue Crab",
+    grepl("CRAB,\\s*(BLUE LAND|BLUE)", common_name, ignore.case = TRUE) ~ "Blue Crab",
+    grepl("LOBSTER,\\s*(CARIBEAN SPINY|SPINY|SPOTTED SPINY|SPANISH|)", common_name, ignore.case = TRUE) ~ "Spiny Lobster",
+    TRUE ~ common_name
+  ))
+
+
+```
+
+##Identify the most Valuable Commercial Fish Species landed in the Fulf of Mexico
+
+```{r}
+
+# Group by fish species and calculate the total adjusted value
+most_valuable <- GI %>%
+  group_by(common_name_cleaned) %>%
+  summarise(total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE)) %>%
+  arrange(desc(total_adjusted_value))
+
+# Print the table of fish species sorted by total adjusted value
+print(most_valuable)
+
+```
+
+##Create a unique dataframe that focuses only on the top 10 most valuable species
+
+```{r}
+library(dplyr)
+
+Most_Val <- c("Brown Shrimp","White Shrimp","Pink Shrimp", "OYSTER, EASTERN", "Blue Crab", "Spiny Lobster", "Stone Crab", "Snapper", "Grouper") # excluded Menhadens
+
+# Create a new data frame with only the top 10 species
+top_10_data <- GI %>%
+  filter(common_name %in% Most_Val) # this has over 50,000 records which is much smaller than the original data file which has so many more species
+head(top_10_data)
+names(top_10_data)
+```
+
+Group by Landed Year and City and calculate total landed value
+
+
+```{r}
+
+# create a new data frame with only the variables I need
+#total_value_per_city_year <- top_10_data %>%
+ # select(landed_year, corporate_name, dealer_state, county_name, dealer_city, common_name_cleaned, live_lbs, Adjusted_Val)
+#head(total_value_per_city_year)
+
+total_value_per_city_year <- top_10_data %>%
+  group_by(dealer_city, landed_year) %>%
+  summarize(
+    total_value = sum(Adjusted_Val, na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  na.omit()
+
+# View the new data frame
+print(total_value_per_city_year) # the city names are repeated only for the different years available
+
+```
+
+##1. Descriptive statistics
+
+For live_lbs I need to create a new daatframe
+
+```{r}
+#summary(total_value_per_city_year$live_lbs) 
+```
+
+```{r}
+summary(total_value_per_city_year$total_value)
+
+```
+
+a negative adjusted dollar value might mean that, when adjusted for inflation or other factors, the actual value has decreased compared to the reference point. It could represent a real loss or reduction in the purchasing power of that amount.
+
+```{r}
+summary(total_value_per_city_year$total_value)
+negative_values <- total_value_per_city_year %>% filter(total_value <0)
+head(negative_values)
+
+
+
+```
+
+```{r}
+total_value_per_city_year <- total_value_per_city_year %>% filter(Adjusted_Val >= 0)
+summary(total_value_per_city_year$Adjusted_Val)
+
+
+```
+
+Why do I have records with "0"
+
+```{r}
+# Identify and display records where adjusted dollar values are exactly 0
+zero_values <- total_value_per_city_year %>%
+  filter(Adjusted_Val == 0)
+
+# Display the identified records
+print(zero_values)
+```
+
+Eliminating 6 records that have the value zero
+
+```{r}
+total_value_per_city_year <- total_value_per_city_year %>% filter(total_value !=0)
+summary(total_value_per_city_year$total_valuemerged_data <- left_join(total_value_per_city_year, top_10_data, by = c("dealer_city", "landed_year"))
+
+
+```
+
+Eliminating Values below 2
+
+```{r}
+
+# Identify and display records where total_value is exactly 1
+one_values <- total_value_per_city_year %>%
+  filter(total_value == 1)
+
+# Display the identified records
+print(one_values)
+
+# Remove records where value is smaller than 2 or total_value is equal to 1
+total_value_per_city_year <- total_value_per_city_year %>%
+  filter(total_value != 1)
+
+# Display summary statistics after filtering
+summary(total_value_per_city_year$total_value)
+
+```
+
+##2. Variance and Standard deviation
+
+1.  Variance and Standard Deviation for Landed Values
+
+Variance is a measure of how much the values in a dataset vary from the mean. It is calculated as the average of the squared differences between each data point and the mean.
+
+First I need to calculate the cumulative adjusted value for all the fish landed in each city
+
+```{r}
+library(dplyr)
+
+#total_value_per_city_year_val <- total_value_per_city_year %>%
+ # select( dealer_city,landed_year, total_value, dealer_state,common_name )
+
+#cumulative_data_val <- total_value_per_city_year_val %>%
+ # filter(!is.na(total_value)) %>%
+  #group_by(dealer_city, landed_year) %>%
+  #mutate(
+   # cumulative_value = cumsum(total_value)
+  #) %>%
+  #ungroup() %>%
+  #na.omit()
+
+
+
+
+
+```
+
+```{r}
+var_live_lbs <- var(top_10_data$live_lbs, na.rm = TRUE)
+sd_live_lbs <- sd(top_10_data$live_lbs, na.rm = TRUE)
+```
+
+2.  Variance and Standard Deviation for Values
+
+```{r}
+var_total_value <- var(total_value_per_city_year$total_value, na.rm = TRUE)
+sd_total_value <- sd(total_value_per_city_year$total_value, na.rm = TRUE)
+
+```
+
+3.  Coefficient of Variation
+
+the coefficient of variation for live_lbs and values shows the distance of individual data points from the mean, normalized by the mean and expressed as a percentage. This gives us insight into the relative variability of the pounds of fish landed or values, considering both the spread of the data and the typical value represented by the mean. It provides a normalized measure of dispersion
+
+```{r}
+
+# Calculate the coefficient of variation accounting for missing values
+cv_live_lbs <- sd(top_10_data$live_lbs, na.rm = TRUE) / mean(top_10_data$live_lbs, na.rm = TRUE) * 100
+
+# we use the standard deviation of the variable live_lbs to measure the amount of variation or dispersion in the pounds of fish landed; the mean of live pounds represents the central tendency of the typical value of the pounds of fish landed - By taking the ratio of the standard deviation to the mean and multiplying by 100, you're expressing the relative variability as a percentage. It provides a normalized measure of dispersion, allowing you to compare the variability of different datasets regardless of their scales.
+
+# Calculate the coefficient of variation excluding missing values
+cv_total_value <- sd(total_value_per_city_year$total_value, na.rm = TRUE) / mean(total_value_per_city_year$total_value, na.rm = TRUE) * 100
+
+
+```
+
+Look at the outlines A. Pounds
+
+```{r}
+
+# Assuming your dataset is named 'top_10_data'
+# Replace 'live_lbs' with the actual column name in your dataset
+
+# Create a new dataset without NAs in the 'live_lbs' column
+Lbs_top_10_data <- top_10_data %>%
+  filter(!is.na(live_lbs))
+
+# Calculate z-scores for live_lbs in the cleaned dataset
+z_scores <- (Lbs_top_10_data$live_lbs - mean(Lbs_top_10_data$live_lbs)) / sd(Lbs_top_10_data$live_lbs)
+
+# Identify outliers with z-scores beyond a threshold (e.g., |z| > 3)
+outliers <- Lbs_top_10_data[abs(z_scores) > 3, ] # now I have a file with 1090 records of outliers - but that does not mean that there are 1000 communities 
+
+# View the outliers
+view(outliers)
+
+```
+
+B. Values
+
+```{r}
+# Assuming your dataset is named 'top_10_data'
+# Replace 'live_lbs' with the actual column name in your dataset
+
+# Create a new dataset without NAs in the 'live_lbs' column
+Val_top_10_data <- top_10_data %>%
+  filter(!is.na(Adjusted_Val))
+
+# Calculate z-scores for live_lbs in the cleaned dataset
+z_scores <- (Val_top_10_data$Adjusted_Val - mean(Val_top_10_data$Adjusted_Val)) / sd(Val_top_10_data$Adjusted_Val)
+
+# Identify outliers with z-scores beyond a threshold (e.g., |z| > 3)
+outliers2 <- Val_top_10_data[abs(z_scores) > 3, ] # now I have a file with 1090 records of outliers - but that does not mean that there are 1000 communities 
+
+# View the outliers
+view(outliers2)
+```
+
+```{r}
+ #Assuming your dataset is named 'top_10_data'
+# Replace 'live_lbs' with the actual column name in your dataset
+
+# Create a new dataset without NAs in the 'live_lbs' column
+Val_top_10_data <- total_value_per_city_year %>%
+  filter(!is.na(total_value))
+
+# Calculate z-scores for live_lbs in the cleaned dataset
+z_scores <- (Val_top_10_data$total_value - mean(Val_top_10_data$total_value)) / sd(Val_top_10_data$total_value)
+
+# Identify outliers with z-scores beyond a threshold (e.g., |z| > 3)
+outliers2_test <- Val_top_10_data[abs(z_scores) > 3, ] # now I have a file with 1090 records of outliers - but that does not mean that there are 1000 communities 
+
+# View the outliers
+view(outliers2_test) # I have outliers but the cities are repeated for each year
+```
+
+4.  Identify cities with Highest Variation
+
+```{r}
+
+# Filter out rows with dealer_city as "UNKNOWN"
+outliers3_test <- outliers2_test %>%
+ filter(dealer_city != "UNKNOWN")
+
+# Calculate percent change for each city in the top 10 species
+#top_10_data <- top_10_data %>%
+ # group_by(dealer_city) %>%
+  #mutate(percent_change = (Adjusted_Val - lag(Adjusted_Val, default = first(Adjusted_Val))) / lag(Adjusted_Val, default = first(Adjusted_Val)) * 100)
+
+# Find the earliest and most recent years for each city
+year_range_top_10 <- outliers3 %>%
+  group_by(dealer_city) %>%
+  summarize(earliest_year = min(landed_year),
+            latest_year = max(landed_year))
+
+# Join the year_range information back to the top_10_data dataframe
+outliers4 <- outliers3 %>%
+  left_join(year_range_top_10, by = "dealer_city")
+
+# Calculate percent change using the earliest and most recent years
+outliers5 <- outliers4 %>%
+  mutate(percent_change = (Adjusted_Val - lag(Adjusted_Val, default = first(Adjusted_Val))) / lag(Adjusted_Val, default = first(Adjusted_Val)) * 100)
+
+# Calculate outliers based on percent change
+Q1 <- quantile(outliers5$percent_change, 0.25, na.rm = TRUE)
+Q3 <- quantile(outliers5$percent_change, 0.75, na.rm = TRUE)
+IQR_value <- Q3 - Q1
+lower_bound <- Q1 - 1.5 * IQR_value
+upper_bound <- Q3 + 1.5 * IQR_value
+
+# Identify outliers
+outliers_top_10 <- outliers5 %>%
+  filter(percent_change < lower_bound | percent_change > upper_bound)
+
+# Print the outliers
+print(outliers_top_10)
+
+
+
+# Filter out rows with dealer_city as "UNKNOWN"
+outliers3_test <- outliers2_test %>%
+ filter(dealer_city != "UNKNOWN")
+
+# Calculate percent change for each city in the top 10 species
+#top_10_data <- top_10_data %>%
+ # group_by(dealer_city) %>%
+  #mutate(percent_change = (Adjusted_Val - lag(Adjusted_Val, default = first(Adjusted_Val))) / lag(Adjusted_Val, default = first(Adjusted_Val)) * 100)
+
+# Find the earliest and most recent years for each city
+year_range_top_10 <- outliers3_test %>%
+  group_by(dealer_city) %>%
+  summarize(earliest_year = min(landed_year),
+            latest_year = max(landed_year))
+
+# Join the year_range information back to the top_10_data dataframe
+outliers4_test <- outliers3_test %>%
+  left_join(year_range_top_10, by = "dealer_city")
+
+# Calculate percent change using the earliest and most recent years
+outliers5_test<- outliers4_test %>%
+  mutate(percent_change = (total_value - lag(total_value, default = first(total_value))) / lag(total_value, default = first(total_value)) * 100)
+
+# Calculate outliers based on percent change
+Q1 <- quantile(outliers5_test$percent_change, 0.25, na.rm = TRUE)
+Q3 <- quantile(outliers5_test$percent_change, 0.75, na.rm = TRUE)
+IQR_value <- Q3 - Q1
+lower_bound <- Q1 - 1.5 * IQR_value
+upper_bound <- Q3 + 1.5 * IQR_value
+
+# Identify outliers
+outliers_top_10_test <- outliers5_test %>%
+  filter(percent_change < lower_bound | percent_change > upper_bound)
+
+# Print the outliers
+print(outliers_top_10_test)
+
+
+
+```
+
+Calculate the cummulative variation for each city
+
+```{r}
+# Group by dealer_city and summarize the data
+HighVariation_communities_2 <- outliers_top_10_test %>%
+  group_by(dealer_city) %>%
+  summarize(
+    total_percent_change = sum(percent_change, na.rm = TRUE),
+    median_percent_change = median(percent_change, na.rm = TRUE),
+    ) #add total_outliers = n() if I want a limit
+
+# Print the city_summary dataframe
+print(HighVariation_communities_2)
+library(writexl)
+
+# Specify the file path and name
+excel_file_path <- "~/Resilience/HighVariation_communities_2.xlsx"
+
+# Write the dataframe to Excel
+write_xlsx(HighVariation_communities_2, path = excel_file_path)
+
+```
+
+##3. Identify communities that have the lowest coeficient of variablity
+
+```{r}
+
+
+stability_data <- outliers4_test %>%
+  group_by(dealer_city) %>%
+  summarize(
+    cv_value = ifelse(mean(total_value, na.rm = TRUE) != 0,
+                      sd(total_value, na.rm = TRUE) / mean(total_value, na.rm = TRUE) * 100,
+                      NA)
+  ) %>%
+  na.omit()
+
+
+#%>% left_join(select(outliers4, dealer_city, dealer_state, county_name, Adjusted_Val), by = "dealer_city")
+
+
+most_stable_cities2 <- stability_data %>%
+  arrange(cv_value) %>%
+  head(20)  # Adjust this based on the number of cities you want to identify
+
+library(writexl)
+
+# Specify the file path and name
+excel_file_path <- "~/Resilience/most_stable_cities2.xlsx"
+
+# Write the dataframe to Excel
+write_xlsx(most_stable_cities2, path = excel_file_path)
+
+
+```

@@ -1,0 +1,300 @@
+---
+title: "Crisis Cities"
+author: "Suzana Blake"
+format: pdf
+---
+
+
+```{r}
+#| echo: false
+#| warning: false
+
+library("tidyverse")
+library("dplyr")
+library("ggplot2")
+
+options(scipen = 999) # takes away the scientific notation 
+```
+Load Inflation Adjusted Data
+```{r setup, include=FALSE}
+# Load the GI data - with inflation adjusted values
+GI <- readRDS("~/Resilience/UpdatedData/GI.RData")
+
+```
+Brief summary
+```{r}
+# Display a summary of the GI data
+summary(GI)
+
+# Create a plot using the GI data
+plot(GI$landed_year, GI$Adjusted_Val, type = "l", main = "Adjusted Value Over Time")
+
+
+Abbeville1 <- GI %>%
+  filter(dealer_city == "ABBEVILLE", landed_year == "1990")
+
+print(Abbeville1)
+
+```
+###Clean and group the Species names
+```{r clean, include=FALSE}
+com_names<-unique(GI$common_name)
+order(com_names)
+list(com_names)
+com_names[str_detect(com_names, regex("MENHADENS", ignore_case = T))]
+com_names[str_detect(com_names, regex("MENHADEN", ignore_case = F ))]
+com_names[str_detect(com_names, regex("GROUPERS", ignore_case = T ))]
+com_names[str_detect(com_names, regex("GROUPER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("SNAPPER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("OYSTER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("CRAB,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("STONE", ignore_case = T ))]
+com_names[str_detect(com_names, regex("CRAB, BLUE", ignore_case = T ))]
+com_names[str_detect(com_names, regex("LOBSTER", ignore_case = T ))]
+
+
+GI <- GI %>%
+  mutate(common_name_cleaned = case_when(
+    grepl("GROUPER,\\s*(WARSAW|GAG|YELLOWEDGE|RED|BLACK|YELLOWFIN|SNOWY|NASSAU|YELLOWMOUTH|MISTY|TIGER|MARBLED|HIND RED|SCAMP|SPECKLED HIND|CONEY)", common_name, ignore.case = TRUE) ~ "Grouper",
+    grepl("SNAPPER,\\s*(RED|GRAY|VERMILION|MUTTON|LANE|YELLOWTAIL|SILK|CUBERA|BLACKFIN|QUEEN|GLASSEYE|DOG|BLACK|MAHOGANY|CARIBBEAN RED)", common_name, ignore.case = TRUE) ~ "Snapper",
+    grepl("CRAB,\\s*(FLORIDA STONE|STONE)", common_name, ignore.case = TRUE) ~ "Stone Crab",
+    grepl("CRABS,\\s*(FLORIDA STONE|STONE)", common_name, ignore.case = TRUE) ~ "Stone Crab",
+    grepl("CRABS,\\s*(BLUE LAND|BLUE)", common_name, ignore.case = TRUE) ~ "Blue Crab",
+    grepl("CRAB,\\s*(BLUE LAND|BLUE)", common_name, ignore.case = TRUE) ~ "Blue Crab",
+    grepl("LOBSTER,\\s*(CARIBEAN SPINY|SPINY|SPOTTED SPINY|SPANISH|)", common_name, ignore.case = TRUE) ~ "Spiny Lobster",
+    TRUE ~ common_name
+  ))
+
+```
+
+## Most Valuable Species
+Identify the most Valuable Commercial Fish Species landed in the Gulf of Mexico
+
+```{r}
+
+# Group by fish species and calculate the total adjusted value
+most_valuable <- GI %>%
+  group_by(common_name_cleaned) %>%
+  summarise(total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE)) %>%
+  arrange(desc(total_adjusted_value))
+
+# Print the table of fish species sorted by total adjusted value
+print(most_valuable)
+```
+##Top 10 most valuable species
+```{r}
+library(dplyr)
+
+Most_Val <- c("Brown Shrimp","White Shrimp","Pink Shrimp", "OYSTER, EASTERN", "Blue Crab", "Spiny Lobster", "Stone Crab", "Snapper", "Grouper") # excluded Menhadens
+
+# Create a new data frame with only the top 10 species
+top_10_data <- GI %>%
+  filter(common_name_cleaned %in% Most_Val) # this has over 50,000 records which is much smaller than the original data file which has so many more species
+
+unique_species <- unique(top_10_data$common_name_cleaned)
+print(unique_species)
+
+# Specify the file path and name
+file_path <- "~/Resilience/UpdatedData/top_10_data.rds"
+
+# Save the data frame to an RDS file
+saveRDS(top_10_data, file = file_path)
+
+
+```
+
+###Group by Year and City
+This will give you the cumulative inflation-adjusted values for each city in each year.
+A. Select only needed columns to avoid multiplication 
+```{r}
+library(dplyr)
+
+# Step 1: Filter out rows with NA in dealer_city
+top_10_data <- top_10_data %>%
+  filter(dealer_city != "#N/A", !is.na(dealer_city))  # Exclude rows with *N/A and NAs in dealer_city
+
+top_10_data <- top_10_data %>%
+  filter(dealer_city != "UNRESOLVED" & dealer_city != "UNKNOWN")
+
+
+# Step 2: Filter for values greater than 1 in Adjusted_Val
+top_10_data <- top_10_data %>%
+  filter(Adjusted_Val > 1 & !is.na(Adjusted_Val))
+```
+
+The code below provided calculates the percentage change from one year to the next for each city in both perc_change_Val (percentage change in adjusted value) and perc_change_lbs (percentage change in live pounds). The calculations consider consecutive years within each city, and the resulting dataset will contain these percentage change values.
+
+```{r}
+#aggregate data from the dealer level to the city level
+City_aggregation2<- top_10_data %>%
+  group_by(landed_year, dealer_state, dealer_city) %>%
+  summarise(
+    total_live_lbs = sum(live_lbs),
+    total_value = sum(value),
+    total_adjusted_val = sum(Adjusted_Val)
+  )
+
+# Calculate percentage change for the aggregated data
+City_aggregation2 <- City_aggregation2 %>%
+  arrange(dealer_city, landed_year) %>%
+  group_by(dealer_city) %>%
+  mutate(
+    perc_change_Val = (total_adjusted_val - lag(total_adjusted_val, default = first(total_adjusted_val))) /
+                        lag(total_adjusted_val, default = first(total_adjusted_val)) * 100,
+    perc_change_lbs = (total_live_lbs - lag(total_live_lbs, default = first(total_live_lbs))) /
+                        lag(total_live_lbs, default = first(total_live_lbs)) * 100
+    
+  )
+
+City_aggregation2 <- City_aggregation2 %>%
+  mutate(
+    perc_change_Val = round(perc_change_Val, 2),
+    perc_change_lbs = round(perc_change_lbs, 2)
+  )
+
+# Print the aggregated and percentage change data
+print(City_aggregation2)
+
+
+# Save the selected data to a new file (e.g., CSV format)
+write.csv(City_aggregation2, "City_aggregation2.csv", row.names = FALSE)
+
+```
+
+## What constituted major change?
+Here we can set the criteria for what constitutes major change. Is it a 50% change
+
+
+```{r}
+# Set your threshold for significant negativechange
+threshold_percent = 100
+threshold_value = -50
+threshold_pounds = 15
+
+# Identify cities with major changes
+significant_changes <- City_aggregation2 %>%
+  filter(abs(perc_change_Val) >= threshold_percent)
+
+#| abs(perc_change_lbs) > threshold_percent
+
+# Identify cities with interesting patterns
+interesting_patterns <- City_aggregation2 %>%
+  filter(
+    perc_change_Val <= threshold_value,
+    abs(perc_change_lbs) <= threshold_pounds
+  )
+
+
+library(openxlsx)
+# Specify the main folder path
+main_folder <- "C:/Users/Suzana.Mic/Documents/Resilience"
+
+# Create the "Change" folder if it doesn't exist
+change_folder <- file.path(main_folder, "CHANGE")
+if (!dir.exists(change_folder)) {
+  dir.create(change_folder, recursive = TRUE)
+}
+
+# Save the data frame to an Excel file in the "Change" folder
+write.xlsx(interesting_patterns, file.path(change_folder, "Interesting_Patterns.xlsx"), rowNames = FALSE)
+write.xlsx(significant_changes, file.path(change_folder, "Cities with Significant Changes.xlsx"), rowNames = FALSE)
+
+```
+
+Identify patterns for years with significant changes
+
+
+To identify patterns in the significant_changes data and check if certain years are repeated across various cities where significant changes were recorded, I use various methods. 
+1. look for common patterns of significant changes in different years across cities. 
+This code groups the significant_changes data by landed_year, counts the number of cities with significant changes in each year, and creates a list of cities for each year. The results will show you the years with the highest counts of cities experiencing significant changes.
+
+```{r}
+# Group by landed_year and count the number of cities with significant changes
+yearly_patterns <- significant_changes %>%
+  group_by(landed_year) %>%
+  summarise(
+    cities_with_significant_change = n(),
+    cities_list = toString(dealer_city)
+  ) %>%
+  arrange(desc(cities_with_significant_change))
+
+# Print or view the results
+print(yearly_patterns)
+
+# Create a bar plot for yearly patterns
+yearly_patterns_plot <- ggplot(yearly_patterns, aes(x = landed_year, y = cities_with_significant_change)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Years when many cities experienced significant changes",
+       x = "Year",
+       y = "Number of Cities") +
+  theme_minimal()
+
+# Print the plot
+print(yearly_patterns_plot)
+
+
+
+
+```
+
+
+### 2. Stable cities
+
+To show a "no change" pattern in as many years as possible from my data where not much change has occurred, I count the number of years where the percentage change is within a certain range (e.g., within ±10%).
+
+abs(perc_change_Val) <= threshold_no_change checks if the percentage change is within ±10%.
+summarise calculates the count of years where the "no change" pattern is observed for each city.
+arrange(desc(no_change_count)) orders the results in descending order based on the count.
+filter(no_change_count == max(no_change_count)) selects cities with the maximum number of "no change" years.
+This will create a table (max_no_change_cities) containing cities that exhibit the "no change" pattern in as many years as possible. Adjust the threshold or other criteria based on your specific definition of "no change" and analysis requirements.
+
+
+```{r}
+
+# Set thresholds for stable changes
+threshold_stable = 10
+
+# Identify cities with stable changes
+stable_cities <- City_aggregation2 %>%
+  filter(
+    abs(perc_change_Val) <= threshold_stable,
+    abs(perc_change_lbs) <= threshold_stable
+  )
+
+library(openxlsx)
+# Specify the main folder path
+main_folder <- "C:/Users/Suzana.Mic/Documents/Resilience"
+
+# Create the "Change" folder if it doesn't exist
+stable_folder <- file.path(main_folder, "STABLE")
+if (!dir.exists(stable_folder)) {
+  dir.create(stable_folder, recursive = TRUE)
+}
+
+# Group by dealer_city and count the number of years with "no change" pattern
+cities_no_change_counts <- stable_cities %>%
+  group_by(dealer_city, dealer_state) %>%
+  summarise(
+    no_change_count = sum(abs(perc_change_Val) <= threshold_stable)
+  ) %>%
+  arrange(desc(no_change_count))
+
+# Filter for cities with the maximum number of "no change" years
+max_no_change_cities <- cities_no_change_counts %>%
+  filter(no_change_count == max(no_change_count))
+
+# Print or view the results
+print(max_no_change_cities)
+
+
+# Save the data frame to an Excel file in the "Change" folder
+write.xlsx(stable_cities, file.path(stable_folder, "Not much change.xlsx"), rowNames = FALSE)
+write.xlsx(cities_no_change_counts, file.path(stable_folder, "No_change counts.xlsx"), rowNames = FALSE)
+
+
+```
+
+
+
+
+

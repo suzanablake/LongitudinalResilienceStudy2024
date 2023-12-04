@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.335">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Suzana Blake">
+
+<title>Coefficient of Variation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="CV_Communities_files/libs/clipboard/clipboard.min.js"></script>
+<script src="CV_Communities_files/libs/quarto-html/quarto.js"></script>
+<script src="CV_Communities_files/libs/quarto-html/popper.min.js"></script>
+<script src="CV_Communities_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="CV_Communities_files/libs/quarto-html/anchor.min.js"></script>
+<link href="CV_Communities_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="CV_Communities_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="CV_Communities_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="CV_Communities_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="CV_Communities_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Coefficient of Variation</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Suzana Blake </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>#<strong>Method Description:</strong> Coefficient of Variation (CV):</p>
+<p>The Coefficient_of_Variation is a measure of relative variability and is calculated as the standard deviation divided by the mean, expressed as a percentage. In the context of your analysis, a higher Coefficient_of_Variation indicates greater relative variability in the Total_Val values over the years for a particular city.</p>
+<p>So, the resulting DataFrame high_variability_cities gives you a list of cities where the landed fish values have the highest year-to-year variability based on the calculated coefficient of variation. Cities with higher values in this DataFrame are those that experience more significant fluctuations in the total landed fish values from one year to the next.</p>
+<p>A coefficient of variation (CV) value of 100.6 for a city indicates a relatively high degree of variability in the context of your data. The coefficient of variation is expressed as a percentage and is calculated as the standard deviation divided by the mean, multiplied by 100.</p>
+<p>Mathematically, CV is calculated using the formula:</p>
+<p><strong>CV=(SDMean)×100CV=( MeanSD​ )×100</strong></p>
+<p>Here:</p>
+<p>SD is the standard deviation of the variable of interest (e.g., total landed fish values for a city). Mean is the mean (average) of the variable. A CV value greater than 100% implies that the standard deviation is larger than the mean, indicating substantial relative variability. It suggests that the data points (total landed fish values) are widely spread out from the mean, which could be due to fluctuations or volatility in the values over time.</p>
+<p>In practical terms, a CV value of 100.6 indicates that the variability in the total landed fish values for that city is substantial, and the mean may not be a reliable summary measure on its own. Analysts often use the CV to assess the relative dispersion or stability of a variable, and a higher CV suggests higher relative variability.</p>
+<p>Note: When calculating the coefficient of variation (CV) for a city, the mean (average) is computed based on the values available for that specific city across the years where data is available. It doesn’t consider data from other cities or years.</p>
+<p><u>What constitutes Low and High Variability?</u></p>
+<p><strong>Low Variability:</strong></p>
+<p>In many cases, a CV below 10% is considered relatively low variability. This implies that the standard deviation is small compared to the mean, suggesting that the values are closely clustered around the average.</p>
+<p><strong>Moderate Variability:</strong></p>
+<p>A CV between 10% and 30% is often considered moderate variability. It indicates a moderate level of dispersion around the mean.</p>
+<p><strong>High Variability:</strong></p>
+<p>A CV above 30% is generally considered high variability. This suggests that the values are more spread out, and there is a substantial degree of fluctuation relative to the mean.</p>
+<p><strong>Dataset-specific Considerations:</strong></p>
+<p>The definition of low variability can vary depending on the nature of the data and the specific industry or field. Some datasets inherently have higher variability due to the nature of the measurements.</p>
+<p><strong>This is what where we need to have a conversation about how we will define high and low variability</strong> because as you will see in the analysis below most of the data points have variability that would be considered by general standards to be moderate to high variability.</p>
+<p>##<strong>Data organization</strong></p>
+<div class="cell">
+
+</div>
+<p>Load Inflation Adjusted Data</p>
+<p>Brief summary</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Display a summary of the GI data</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(GI)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  landed_year   data_supplier_st    dealer_id         corporate_name    
+ Min.   :1977   Length:475823      Length:475823      Length:475823     
+ 1st Qu.:1993   Class :character   Class :character   Class :character  
+ Median :2002   Mode  :character   Mode  :character   Mode  :character  
+ Mean   :2001                                                           
+ 3rd Qu.:2011                                                           
+ Max.   :2020                                                           
+                                                                        
+ dealer_state       county_name        dealer_city          zipcode         
+ Length:475823      Length:475823      Length:475823      Length:475823     
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+  species_itis    common_name           live_lbs             value         
+ Min.   :  5414   Length:475823      Min.   :      -10   Min.   :    -190  
+ 1st Qu.:161092   Class :character   1st Qu.:       41   1st Qu.:      53  
+ Median :168791   Mode  :character   Median :      322   Median :     401  
+ Mean   :192794                      Mean   :    96661   Mean   :   66539  
+ 3rd Qu.:170335                      3rd Qu.:     3380   3rd Qu.:    4386  
+ Max.   :775091                      Max.   :602540946   Max.   :78082845  
+ NA's   :9                           NA's   :997         NA's   :20353     
+ Inflation_index  Adjust_factor    Adjusted_Val     
+ Min.   : 33.43   Min.   :1.000   Min.   :    -207  
+ 1st Qu.: 68.88   1st Qu.:1.159   1st Qu.:      74  
+ Median : 81.03   Median :1.404   Median :     563  
+ Mean   : 81.87   Mean   :1.482   Mean   :  103924  
+ 3rd Qu.: 98.16   3rd Qu.:1.652   3rd Qu.:    6195  
+ Max.   :113.78   Max.   :3.404   Max.   :80520745  
+                                  NA's   :20353     </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a plot using the GI data</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(GI<span class="sc">$</span>landed_year, GI<span class="sc">$</span>Adjusted_Val, <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">main =</span> <span class="st">"Adjusted Value Over Time"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="CV_Communities_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>###Clean and group the Species names</p>
+<section id="most-valuable-species" class="level2">
+<h2 class="anchored" data-anchor-id="most-valuable-species">Most Valuable Species</h2>
+<p>Identify the most Valuable Commercial Fish Species landed in the Gulf of Mexico</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Group by fish species and calculate the total adjusted value</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>most_valuable <span class="ot">&lt;-</span> GI <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(common_name_cleaned) <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total_adjusted_value =</span> <span class="fu">sum</span>(Adjusted_Val, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total_adjusted_value))</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Select the top 10 species</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>MostValuable10 <span class="ot">&lt;-</span> <span class="fu">head</span>(most_valuable, <span class="dv">10</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#install.packages(c("shiny", "shinydashboard"))</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(shiny)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the table of the top 10 fish species sorted by total adjusted value</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>MostValuable10 <span class="sc">%&gt;%</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(<span class="st">"html"</span>, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Fish Species"</span>, <span class="st">"Total Adjusted Value"</span>), <span class="at">align =</span> <span class="st">"c"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">bootstrap_options =</span> <span class="st">"striped"</span>, <span class="at">full_width =</span> <span class="cn">FALSE</span>, <span class="at">position =</span> <span class="st">"center"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_spec</span>(<span class="dv">1</span>, <span class="at">width =</span> <span class="st">"70%"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_spec</span>(<span class="dv">2</span>, <span class="at">width =</span> <span class="st">"30%"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;table class="table table-striped" style="width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:center;"&gt; Fish Species &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; Total Adjusted Value &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;width: 70%; "&gt; Brown Shrimp &lt;/td&gt;
+   &lt;td style="text-align:center;width: 30%; "&gt; 17662967920 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;width: 70%; "&gt; White Shrimp &lt;/td&gt;
+   &lt;td style="text-align:center;width: 30%; "&gt; 12511132805 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;width: 70%; "&gt; Pink Shrimp &lt;/td&gt;
+   &lt;td style="text-align:center;width: 30%; "&gt; 2897587320 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;width: 70%; "&gt; OYSTER, EASTERN &lt;/td&gt;
+   &lt;td style="text-align:center;width: 30%; "&gt; 2745493994 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;width: 70%; "&gt; MENHADENS &lt;/td&gt;
+   &lt;td style="text-align:center;width: 30%; "&gt; 2443102691 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;width: 70%; "&gt; Blue Crab &lt;/td&gt;
+   &lt;td style="text-align:center;width: 30%; "&gt; 1493188136 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;width: 70%; "&gt; Spiny Lobster &lt;/td&gt;
+   &lt;td style="text-align:center;width: 30%; "&gt; 1344745704 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;width: 70%; "&gt; Stone Crab &lt;/td&gt;
+   &lt;td style="text-align:center;width: 30%; "&gt; 1096418580 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;width: 70%; "&gt; Snapper &lt;/td&gt;
+   &lt;td style="text-align:center;width: 30%; "&gt; 949368835 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;width: 70%; "&gt; Grouper &lt;/td&gt;
+   &lt;td style="text-align:center;width: 30%; "&gt; 883207380 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>MostValuable10</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 2
+   common_name_cleaned total_adjusted_value
+   &lt;chr&gt;                              &lt;dbl&gt;
+ 1 Brown Shrimp                 17662967920
+ 2 White Shrimp                 12511132805
+ 3 Pink Shrimp                   2897587320
+ 4 OYSTER, EASTERN               2745493994
+ 5 MENHADENS                     2443102691
+ 6 Blue Crab                     1493188136
+ 7 Spiny Lobster                 1344745704
+ 8 Stone Crab                    1096418580
+ 9 Snapper                        949368835
+10 Grouper                        883207380</code></pre>
+</div>
+</div>
+<p>##Top 10 most valuable species</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>Most_Val <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Brown Shrimp"</span>,<span class="st">"White Shrimp"</span>,<span class="st">"Pink Shrimp"</span>, <span class="st">"OYSTER, EASTERN"</span>, <span class="st">"Blue Crab"</span>, <span class="st">"Spiny Lobster"</span>, <span class="st">"Stone Crab"</span>, <span class="st">"Snapper"</span>, <span class="st">"Grouper"</span>) <span class="co"># excluded Menhadens</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a new data frame with only the top 10 species</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>top_10_data <span class="ot">&lt;-</span> GI <span class="sc">%&gt;%</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(common_name_cleaned <span class="sc">%in%</span> Most_Val) <span class="co"># this has over 50,000 records which is much smaller than the original data file which has so many more species</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(top_10_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  landed_year data_supplier_st dealer_id           corporate_name dealer_state
+1        1977               LA    GS5108 INTRACOASTAL SEAFOOD INC           LA
+2        1977               LA    GS5108 INTRACOASTAL SEAFOOD INC           LA
+3        1977               TX    GS7103      FISHERMAN'S HARVEST           TX
+4        1977               TX    GS7103      FISHERMAN'S HARVEST           TX
+5        1977               TX    GS7102     JERI'S SEAFOOD, INC.           TX
+6        1977               TX    GS7102     JERI'S SEAFOOD, INC.           TX
+  county_name dealer_city zipcode species_itis  common_name live_lbs  value
+1   VERMILION   ABBEVILLE   70510       551570 Brown Shrimp   146564  65210
+2   VERMILION   ABBEVILLE   70510       551680 White Shrimp   102661  89977
+3    CHAMBERS     ANAHUAC   77514       551570 Brown Shrimp    37550  21570
+4    CHAMBERS     ANAHUAC   77514       551680 White Shrimp    29649  13218
+5    CHAMBERS     ANAHUAC   77514       551570 Brown Shrimp    19999  12788
+6    CHAMBERS     ANAHUAC   77514       551680 White Shrimp   230620 203456
+  Inflation_index Adjust_factor Adjusted_Val common_name_cleaned
+1          33.426      3.404057       221979        Brown Shrimp
+2          33.426      3.404057       306287        White Shrimp
+3          33.426      3.404057        73426        Brown Shrimp
+4          33.426      3.404057        44995        White Shrimp
+5          33.426      3.404057        43531        Brown Shrimp
+6          33.426      3.404057       692576        White Shrimp</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>unique_species <span class="ot">&lt;-</span> <span class="fu">unique</span>(top_10_data<span class="sc">$</span>common_name_cleaned)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(unique_species)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Brown Shrimp"    "White Shrimp"    "Pink Shrimp"     "OYSTER, EASTERN"
+[5] "Blue Crab"       "Snapper"         "Stone Crab"      "Spiny Lobster"  
+[9] "Grouper"        </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify the file path and name</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>file_path <span class="ot">&lt;-</span> <span class="st">"~/Resilience/UpdatedData/top_10_data.rds"</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Save the data frame to an RDS file</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(top_10_data, <span class="at">file =</span> file_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>###Group by Year and City This will give you the cumulative inflation-adjusted values for each city in each year. A. Select only needed columns to avoid multiplication</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: Filter out rows with NA in dealer_city</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>top_10_data <span class="ot">&lt;-</span> top_10_data <span class="sc">%&gt;%</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dealer_city <span class="sc">!=</span> <span class="st">"#N/A"</span>, <span class="sc">!</span><span class="fu">is.na</span>(dealer_city))  <span class="co"># Exclude rows with *N/A and NAs in dealer_city</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>top_10_data <span class="ot">&lt;-</span> top_10_data <span class="sc">%&gt;%</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dealer_city <span class="sc">!=</span> <span class="st">"UNRESOLVED"</span> <span class="sc">&amp;</span> dealer_city <span class="sc">!=</span> <span class="st">"UNKNOWN"</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Filter for values greater than 1 in Adjusted_Val</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>top_10_data <span class="ot">&lt;-</span> top_10_data <span class="sc">%&gt;%</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Adjusted_Val <span class="sc">&gt;</span> <span class="dv">1</span> <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(Adjusted_Val))</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="co">#aggregate data from the dealer level to the city level</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>City_aggregation<span class="ot">&lt;-</span> top_10_data <span class="sc">%&gt;%</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(landed_year, dealer_state, dealer_city) <span class="sc">%&gt;%</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_live_lbs =</span> <span class="fu">sum</span>(live_lbs),</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_value =</span> <span class="fu">sum</span>(value),</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_adjusted_val =</span> <span class="fu">sum</span>(Adjusted_Val)</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'landed_year', 'dealer_state'. You can
+override using the `.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the aggregated and percentage change data</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(City_aggregation)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10,621 × 6
+# Groups:   landed_year, dealer_state [220]
+   landed_year dealer_state dealer_city    total_live_lbs total_value
+         &lt;int&gt; &lt;chr&gt;        &lt;chr&gt;                   &lt;dbl&gt;       &lt;dbl&gt;
+ 1        1977 AL           BAYOU LA BATRE        9386658    13615361
+ 2        1977 AL           BON SECOUR            3772412     4992808
+ 3        1977 AL           CODEN                 4334387     5307025
+ 4        1977 AL           DAUPHIN ISLAND        1789636     2176367
+ 5        1977 AL           GULF SHORES            901252     1097896
+ 6        1977 AL           MOBILE                1759620     1869239
+ 7        1977 FL           APALACHICOLA          1283087     1426407
+ 8        1977 FL           CANTONMENT              10180       12165
+ 9        1977 FL           CARRABELLE             238262      242517
+10        1977 FL           CORTEZ                  53249       69496
+# ℹ 10,611 more rows
+# ℹ 1 more variable: total_adjusted_val &lt;dbl&gt;</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save the selected data to a new file (e.g., CSV format)</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(City_aggregation, <span class="st">"City_aggregation.csv"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="a.identify-cities-with-high-variation" class="level1">
+<h1>A.Identify Cities with High Variation</h1>
+<p>##1.Values:Calculate Coefficient of Variation for Total Landed Values Calculate the coefficient of variation for each city using the grouped data. The coefficient of variation is the ratio of the standard deviation to the mean, multiplied by 100.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>cv_data <span class="ot">&lt;-</span> City_aggregation <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dealer_city, dealer_state) <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">n</span>() <span class="sc">&gt;=</span> <span class="dv">10</span>) <span class="sc">%&gt;%</span>  <span class="co"># Keep groups with 10 or more data points for years</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">Mean_Total_Val =</span> <span class="fu">mean</span>(total_adjusted_val, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">SD_Total_Val =</span> <span class="fu">sd</span>(total_adjusted_val, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">Coefficient_of_Variation =</span> <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(SD_Total_Val), <span class="fu">round</span>((SD_Total_Val <span class="sc">/</span> Mean_Total_Val) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">2</span>), <span class="cn">NA</span>)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'dealer_city'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+</div>
+<p>Identify Cities with High Variability</p>
+<p>##Identify Cities with High Variability in Landed Values</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>high_variability_cities <span class="ot">&lt;-</span> cv_data[<span class="fu">order</span>(<span class="sc">-</span>cv_data<span class="sc">$</span>Coefficient_of_Variation), ]</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(openxlsx)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify the full file path and name</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>file_path <span class="ot">&lt;-</span> <span class="st">"C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/high_variability_cities.xlsx"</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Write the DataFrame to an Excel file</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="fu">write.xlsx</span>(high_variability_cities, file_path, <span class="at">rowNames =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>##Graphical Representation Bar Plot</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter cities with CV &gt; 100</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>high_cv_cities <span class="ot">&lt;-</span> <span class="fu">subset</span>(high_variability_cities, Coefficient_of_Variation <span class="sc">&gt;</span> <span class="dv">100</span>)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Bar plot for cities with high CV, facet by state</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(high_cv_cities, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(dealer_city, <span class="sc">-</span>Coefficient_of_Variation), <span class="at">y =</span> Coefficient_of_Variation)) <span class="sc">+</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"blue"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Cities with CV &gt; 100"</span>, <span class="at">x =</span> <span class="st">"City"</span>, <span class="at">y =</span> <span class="st">"Coefficient of Variation"</span>) <span class="sc">+</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> dealer_state, <span class="at">scales =</span> <span class="st">"free"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="CV_Communities_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Bar plot for FL and LA: High - Values</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter FL and LA</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>fl_la_cities <span class="ot">&lt;-</span> <span class="fu">subset</span>(high_cv_cities, dealer_state <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"FL"</span>, <span class="st">"LA"</span>))</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Bar plot for FL and LA</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(fl_la_cities, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(dealer_city, <span class="sc">-</span>Coefficient_of_Variation), <span class="at">y =</span> Coefficient_of_Variation)) <span class="sc">+</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"blue"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Cities with CV &gt; 100 (FL and LA only)"</span>, <span class="at">x =</span> <span class="st">"City"</span>, <span class="at">y =</span> <span class="st">"Coefficient of Variation"</span>) <span class="sc">+</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> dealer_state, <span class="at">scales =</span> <span class="st">"free"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="CV_Communities_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Bar plot for Moderate Variability: High - Values</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>moderate_CV_val <span class="ot">&lt;-</span> <span class="fu">subset</span>(high_variability_cities, Coefficient_of_Variation <span class="sc">&gt;</span> <span class="dv">30</span> <span class="sc">&amp;</span> Coefficient_of_Variation <span class="sc">&lt;=</span> <span class="dv">100</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Bar plot for cities with high CV, facet by state</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(moderate_CV_val, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(dealer_city, <span class="sc">-</span>Coefficient_of_Variation), <span class="at">y =</span> Coefficient_of_Variation)) <span class="sc">+</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"blue"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Cities with Moderate CV between 30% and 100%"</span>, <span class="at">x =</span> <span class="st">"City"</span>, <span class="at">y =</span> <span class="st">"Coefficient of Variation"</span>) <span class="sc">+</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> dealer_state, <span class="at">scales =</span> <span class="st">"free"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="CV_Communities_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Bar plot for FL and LA: moderate variability</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter FL and LA</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>fl_la_cities_M <span class="ot">&lt;-</span> <span class="fu">subset</span>(moderate_CV_val, dealer_state <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"FL"</span>, <span class="st">"LA"</span>))</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Bar plot for FL and LA</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(fl_la_cities_M, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(dealer_city, <span class="sc">-</span>Coefficient_of_Variation), <span class="at">y =</span> Coefficient_of_Variation)) <span class="sc">+</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"blue"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Cities with  Moderate CV between 30% and 100%"</span>, <span class="at">x =</span> <span class="st">"City"</span>, <span class="at">y =</span> <span class="st">"Coefficient of Variation"</span>) <span class="sc">+</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> dealer_state, <span class="at">scales =</span> <span class="st">"free"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="CV_Communities_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<section id="calculate-coefficient-of-variation-for-total-landed-pounds" class="level2">
+<h2 class="anchored" data-anchor-id="calculate-coefficient-of-variation-for-total-landed-pounds">2.Calculate Coefficient of Variation for Total Landed Pounds</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>cv_lbs <span class="ot">&lt;-</span> City_aggregation <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dealer_city, dealer_state) <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">n</span>() <span class="sc">&gt;=</span> <span class="dv">10</span>) <span class="sc">%&gt;%</span>  <span class="co"># Keep groups with 10 or more data points for years</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">Mean_Total_lbs =</span> <span class="fu">mean</span>(total_live_lbs, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">SD_Total_lbs =</span> <span class="fu">sd</span>(total_live_lbs, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">CoefVar_lbs =</span> <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(SD_Total_lbs), <span class="fu">round</span>((SD_Total_lbs <span class="sc">/</span> Mean_Total_lbs) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">2</span>), <span class="cn">NA</span>)</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'dealer_city'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+</div>
+<p>##Identify Cities with High Variability: Pounds</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>high_cities_LBS <span class="ot">&lt;-</span> cv_lbs[<span class="fu">order</span>(<span class="sc">-</span>cv_lbs<span class="sc">$</span>CoefVar_lbs), ]</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(openxlsx)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify the full file path and name</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>file_path <span class="ot">&lt;-</span> <span class="st">"C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/high_cities_LBS.xlsx"</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Write the DataFrame to an Excel file</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="fu">write.xlsx</span>(high_cities_LBS, file_path, <span class="at">rowNames =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>##Graphical Representation Bar Plot High variability for Pounds Landed</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter cities with CV &gt; 100</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>cv_cities_lbs <span class="ot">&lt;-</span> <span class="fu">subset</span>(high_cities_LBS, CoefVar_lbs <span class="sc">&gt;</span> <span class="dv">100</span>)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Bar plot for cities with high CV, facet by state</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(cv_cities_lbs, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(dealer_city, <span class="sc">-</span>CoefVar_lbs), <span class="at">y =</span> CoefVar_lbs)) <span class="sc">+</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"blue"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Cities with CV &gt; 100"</span>, <span class="at">x =</span> <span class="st">"City"</span>, <span class="at">y =</span> <span class="st">"Coefficient of Variation for Landed Pounds"</span>) <span class="sc">+</span></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> dealer_state, <span class="at">scales =</span> <span class="st">"free"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="CV_Communities_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Bar plot for FL and LA: High Variability Pounds Landed</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter FL and LA</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>fl_la_cities_lbs <span class="ot">&lt;-</span> <span class="fu">subset</span>(cv_cities_lbs, dealer_state <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"FL"</span>, <span class="st">"LA"</span>))</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Bar plot for FL and LA</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(fl_la_cities_lbs, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(dealer_city, <span class="sc">-</span>CoefVar_lbs), <span class="at">y =</span> CoefVar_lbs)) <span class="sc">+</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"blue"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Cities with CV &gt; 100 (FL and LA only)"</span>, <span class="at">x =</span> <span class="st">"City"</span>, <span class="at">y =</span> <span class="st">"Coefficient of Variation for Landed Pounds"</span>) <span class="sc">+</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> dealer_state, <span class="at">scales =</span> <span class="st">"free"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="CV_Communities_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="b.-identify-cities-with-low-variability" class="level1">
+<h1>B. Identify Cities with Low Variability</h1>
+<p>##1.Value of Landed Fish</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort the DataFrame in descending order based on Coefficient_of_Variation</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>sorted_low_variability_cities <span class="ot">&lt;-</span> cv_data[<span class="fu">order</span>(cv_data<span class="sc">$</span>Coefficient_of_Variation, <span class="at">decreasing =</span> <span class="cn">TRUE</span>), ]</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter cities with CV equal or smaller than 60</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>low_variability_cities <span class="ot">&lt;-</span> sorted_low_variability_cities[sorted_low_variability_cities<span class="sc">$</span>Coefficient_of_Variation <span class="sc">&lt;=</span> <span class="dv">60</span>, ]</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify the full file path and name for the low variability cities</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>file_path_low_variability <span class="ot">&lt;-</span> <span class="st">"C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/low_variability_cities.xlsx"</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Write the DataFrame to an Excel file</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(openxlsx)</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="fu">write.xlsx</span>(low_variability_cities, file_path_low_variability, <span class="at">rowNames =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>##Graphical Representation: low variability Bar Plot</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter cities with CV below 30%</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>low_variability_cities <span class="ot">&lt;-</span> <span class="fu">subset</span>(low_variability_cities, Coefficient_of_Variation <span class="sc">&lt;=</span> <span class="dv">30</span>) </span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Bar plot for cities with low CV, facet by state</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(low_variability_cities, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(dealer_city, Coefficient_of_Variation), <span class="at">y =</span> Coefficient_of_Variation)) <span class="sc">+</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"green"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Cities with Low Variability or a CV &lt;= 30"</span>, <span class="at">x =</span> <span class="st">"City"</span>, <span class="at">y =</span> <span class="st">"Coefficient of Variation"</span>) <span class="sc">+</span></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> dealer_state, <span class="at">scales =</span> <span class="st">"free"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="CV_Communities_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>##1.Pounds of Landed Fish: Low variability</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Sort the DataFrame in descending order based on Coefficient_of_Variation</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>sorted_low_variability_cities_LBS <span class="ot">&lt;-</span> cv_lbs[<span class="fu">order</span>(cv_lbs<span class="sc">$</span>CoefVar_lbs, <span class="at">decreasing =</span> <span class="cn">TRUE</span>), ]</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter cities with CV equal or smaller than 60</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>low_variability_cities_LBS <span class="ot">&lt;-</span> sorted_low_variability_cities_LBS[sorted_low_variability_cities_LBS<span class="sc">$</span>CoefVar_lbs <span class="sc">&lt;=</span> <span class="dv">30</span>, ]</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(openxlsx)</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify the full file path and name</span></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>file_path <span class="ot">&lt;-</span> <span class="st">"C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/low_variability_cities_LBS.xlsx"</span></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Write the DataFrame to an Excel file</span></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a><span class="fu">write.xlsx</span>(low_variability_cities_LBS, file_path, <span class="at">rowNames =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>##Graphical Representation Bar Plot</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Bar plot for cities with high CV, facet by state</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(low_variability_cities_LBS, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(dealer_city, <span class="sc">-</span>CoefVar_lbs), <span class="at">y =</span> CoefVar_lbs)) <span class="sc">+</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"blue"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Cities with Low relative Variability or CV &lt;= 30"</span>, <span class="at">x =</span> <span class="st">"City"</span>, <span class="at">y =</span> <span class="st">"Coefficient of Variation for Landed Pounds"</span>) <span class="sc">+</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> dealer_state, <span class="at">scales =</span> <span class="st">"free"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="CV_Communities_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
