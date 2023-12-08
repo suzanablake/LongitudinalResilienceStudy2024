@@ -1,0 +1,190 @@
+---
+title: "PCA-multivariate"
+format: pdf
+---
+
+## 
+
+Load the reduced to the top 9 species in the Gulf data
+```{r load data, echo=FALSE}
+# Load required libraries
+library(FactoMineR)
+library(ggplot2)  # for visualization
+# Load the GI data - with inflation adjusted values
+top_10_species <- readRDS("~/Resilience/UpdatedData/top_10_data.rds")
+
+```
+Brief summary
+```{r}
+# Display a summary of the GI data
+summary(top_10_species)
+
+```
+
+##Top 10 most valuable species
+```{r}
+head(top_10_species)
+names(top_10_species)
+#unique_species <- unique(top_10_species$common_name_cleaned)
+#print(unique_species)
+```
+```{r}
+library(dplyr)
+
+# Assuming top_10_species is your original dataset
+top_10 <- top_10_species %>%
+  select(-data_supplier_st, -zipcode, -Inflation_index, -Adjust_factor, -common_name, -species_itis)
+summary(top_10)
+```
+
+### Aggregate the data for PCA
+GOAL: focus on the relationship between a maximum drop in landed values in one year and the increase in landed values in a different species
+To do so I do not need info on the city landed - I only need info on the years and various species
+Start by aggregating to 
+
+```{r}
+
+library(dplyr)
+
+# Assuming top_10_species is your original dataset
+top_10_aggregated <- top_10 %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarise(
+    total_live_lbs = sum(live_lbs, na.rm = TRUE),
+    total_Adjusted_Val = sum(Adjusted_Val, na.rm = TRUE)
+ )
+
+
+
+```
+##PCA
+```{r}
+
+
+library(tidyr)
+
+# Pivot the data to create a wide-format time series for each year and species
+top_10_species_wide <- top_10_aggregated %>%
+  pivot_wider(names_from = common_name_cleaned, 
+              values_from = c("total_live_lbs", "total_Adjusted_Val"),
+              values_fill = 0)
+
+# Assuming top_10_species_wide is your wide-format dataset
+# Note: Exclude non-numeric columns (e.g., year and species) from the PCA analysis
+pca_result <- prcomp(top_10_species_wide[, -c(1:2)], scale. = TRUE)
+
+# Explore the results
+summary(pca_result)
+
+```
+
+The PC1 is strongly associated with the "Blue Crab" species, it means that the variations in the "Blue Crab" data contribute significantly to the overall variability that PC1 is capturing. In other words, when PC1 is high, it indicates a pattern in the data where the "Blue Crab" species tends to have higher values, and when PC1 is low, it suggests lower values for the "Blue Crab."
+
+In practical terms, this can be interpreted as saying that the "Blue Crab" species has the most influence on the dominant patterns or trends represented by PC1. The higher the loading (positive or negative) of a species on PC1, the more it contributes to the overall structure that PC1 is capturing.
+
+
+
+```{r}
+# Assuming pca_result is your PCA result
+loadings <- pca_result$rotation
+
+# Extract loadings for PC1
+loadings_PC1 <- loadings[, 1]
+
+# Order the loadings by magnitude
+loadings_PC1_ordered <- loadings_PC1[order(abs(loadings_PC1), decreasing = TRUE)]
+
+# Display the top contributing species for PC1
+top_species_PC1 <- names(loadings_PC1_ordered)
+top_species_PC1
+
+```
+
+Plot
+```{r}
+# Assuming pca_result is your PCA result
+# Assuming species_loadings is a matrix containing the loadings of each species on each PC
+
+# Extracting scores for each observation
+scores <- as.data.frame(pca_result$x[, 1:2])
+
+# Extracting loadings for each species
+loadings <- as.data.frame(loadings[, 1:2])
+
+# Creating a biplot
+biplot <- ggplot() +
+  geom_point(data = scores, aes(x = PC1, y = PC2), size = 3) +
+  geom_text(data = loadings, aes(x = PC1, y = PC2, label = rownames(loadings)), hjust = 0, vjust = 0) +
+  labs(x = "PC1", y = "PC2", title = "Biplot of PCA")
+
+# Creating a biplot with arrows
+biplot2 <- ggplot() +
+  geom_point(data = scores, aes(x = PC1, y = PC2), size = 3) +
+  geom_segment(data = loadings, aes(x = 0, y = 0, xend = PC1, yend = PC2, color = rownames(loadings)),
+               arrow = arrow(length = unit(0.03, "npc")), size = 1, alpha = 0.7) +
+  scale_color_discrete(name = "Species") +  # Adding legend
+  theme(legend.position = "right") +  # Adjusting legend position
+  labs(x = "PC1", y = "PC2", title = "Biplot of PCA")
+
+# Display the biplot
+print(biplot)
+
+
+# Display the biplot
+print(biplot2)
+
+
+```
+
+### Filter Species based on loadings
+## Interpretation: 
+
+Species with positive loadings on PC1 based on Values are: Snapper, Blue Crab, eastern Oyster, Stone crab and Groupeer
+Species with positive loadings on PC1 based on Pounds are: Snapper, White Shrimp, Eastern Oyster and Grouper
+
+==> these are the species that contribute to an increase in overall variance. Higher values of Snapper, Blue Crab, oyster and grouper are associated with a positive direction of PC1. 
+
+Species with negative loadings on PC1 based on Values: White Shrimp, Pink Shrmp, Brown Shrimp, Spiny Lobster
+Species with negative Loadings on PC1 based on pounds: Pink Shrimp, Brown Shrimp, Spiny Lobster, Stone Crab
+
+
+
+```{r}
+# Assuming pca_result is your PCA result
+loadings <- pca_result$rotation
+
+# Extract loadings for PC1 and PC2
+loadings_PC1 <- loadings[, 1]
+loadings_PC2 <- loadings[, 2]
+
+# Create a data frame with species and their loadings on PC1 and PC2
+loadings_data <- data.frame(species = rownames(loadings), PC1 = loadings_PC1, PC2 = loadings_PC2)
+
+# Create separate plots for positive and negative loadings on PC1 and PC2
+library(ggplot2)
+
+# Plot for positive loadings on PC1
+ggplot(subset(loadings_data, PC1 > 0), aes(x = PC1, y = PC2, label = species)) +
+  geom_text() +
+  ggtitle("Species with Positive Loadings on PC1")
+
+# Plot for negative loadings on PC1
+ggplot(subset(loadings_data, PC1 < 0), aes(x = PC1, y = PC2, label = species)) +
+  geom_text() +
+  ggtitle("Species with Negative Loadings on PC1")
+
+# Plot for positive loadings on PC2
+ggplot(subset(loadings_data, PC2 > 0), aes(x = PC1, y = PC2, label = species)) +
+  geom_text() +
+  ggtitle("Species with Positive Loadings on PC2")
+
+# Plot for negative loadings on PC2
+ggplot(subset(loadings_data, PC2 < 0), aes(x = PC1, y = PC2, label = species)) +
+  geom_text() +
+  ggtitle("Species with Negative Loadings on PC2")
+
+```
+
+
+
+

@@ -18,7 +18,7 @@ options(scipen = 999) # takes away the scientific notation
 Load Inflation Adjusted Data
 ```{r setup, include=FALSE}
 # Load the GI data - with inflation adjusted values
-GI <- readRDS("~/Resilience/UpdatedData/GI.RData")
+GI <- readRDS("~/Resilience/GitReady/UpdatedData/GI.RData")
 
 ```
 Brief summary
@@ -29,11 +29,53 @@ summary(GI)
 # Create a plot using the GI data
 plot(GI$landed_year, GI$Adjusted_Val, type = "l", main = "Adjusted Value Over Time")
 
+library(dplyr)
 
-Abbeville1 <- GI %>%
-  filter(dealer_city == "ABBEVILLE", landed_year == "1990")
+# Group the data by dealer_city and count the distinct states for each city
+city_state_counts <- GI %>%
+  group_by(dealer_city) %>%
+  summarize(
+    unique_states = n_distinct(dealer_state),
+    total_records = n()
+  )
 
-print(Abbeville1)
+# Filter cities linked to more than one state
+cities_with_multiple_states <- city_state_counts %>%
+  filter(unique_states > 1)
+
+
+# View the results
+print(cities_with_multiple_states)
+
+target_city <- 'FREEPORT'
+
+# Filter the original dataset to include only the records for the target city
+records_for_target_city <- GI %>%
+  filter(dealer_city == target_city)
+
+# View the results
+print(records_for_target_city)
+
+# Summarize Adjusted_val by state and year
+summary_by_state <- records_for_target_city %>%
+  group_by(dealer_state, landed_year) %>%
+  summarize(total_adjusted_val = sum(Adjusted_Val))
+
+# Plot the summarized data
+library(ggplot2)
+
+# Use geom_line to plot the trends for each state
+Freeport <- ggplot(summary_by_state, aes(x = landed_year, y = total_adjusted_val, color = dealer_state)) +
+  geom_line() +
+  labs(title = paste("Adjusted_val Trends for Freeport, Texas, and Freeport, Florida"),
+       x = "Year",
+       y = "Total Adjusted_val",
+       color = "State") +
+  theme_minimal()
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/GitReady/Community_Trends/FreeportTX_FL.png", plot = Freeport, width = 14, height = 6, units = "in")
+
 
 ```
 ###Clean and group the Species names
@@ -64,7 +106,6 @@ GI <- GI %>%
     grepl("LOBSTER,\\s*(CARIBEAN SPINY|SPINY|SPOTTED SPINY|SPANISH|)", common_name, ignore.case = TRUE) ~ "Spiny Lobster",
     TRUE ~ common_name
   ))
-
 ```
 
 ## Most Valuable Species
@@ -95,7 +136,7 @@ unique_species <- unique(top_10_data$common_name_cleaned)
 print(unique_species)
 
 # Specify the file path and name
-file_path <- "~/Resilience/UpdatedData/top_10_data.rds"
+file_path <- "~/Resilience/GitReady/UpdatedData/top_10_data.rds"
 
 # Save the data frame to an RDS file
 saveRDS(top_10_data, file = file_path)
@@ -122,11 +163,11 @@ top_10_data <- top_10_data %>%
   filter(Adjusted_Val > 1 & !is.na(Adjusted_Val))
 ```
 
-The code below provided calculates the percentage change from one year to the next for each city in both perc_change_Val (percentage change in adjusted value) and perc_change_lbs (percentage change in live pounds). The calculations consider consecutive years within each city, and the resulting dataset will contain these percentage change values.
+The code below calculates the percentage change from one year to the next for each city in both perc_change_Val (percentage change in adjusted value) and perc_change_lbs (percentage change in live pounds). The calculations consider consecutive years within each city, and the resulting dataset will contain these percentage change values.
 
 ```{r}
 #aggregate data from the dealer level to the city level
-City_aggregation2<- top_10_data %>%
+City_aggregation_Change<- top_10_data %>%
   group_by(landed_year, dealer_state, dealer_city) %>%
   summarise(
     total_live_lbs = sum(live_lbs),
@@ -135,7 +176,9 @@ City_aggregation2<- top_10_data %>%
   )
 
 # Calculate percentage change for the aggregated data
-City_aggregation2 <- City_aggregation2 %>%
+#This column calculates the percentage change in total_adjusted_val from the previous row within each group (dealer_city). It uses the lag function to get the value of the previous row and calculates the percentage change.
+#the overall effect of this command is to arrange the data by city and year, then calculate the percentage change for two specified columns within each city group based on the values of the previous rows.
+City_aggregation_Change <- City_aggregation_Change %>%
   arrange(dealer_city, landed_year) %>%
   group_by(dealer_city) %>%
   mutate(
@@ -143,21 +186,26 @@ City_aggregation2 <- City_aggregation2 %>%
                         lag(total_adjusted_val, default = first(total_adjusted_val)) * 100,
     perc_change_lbs = (total_live_lbs - lag(total_live_lbs, default = first(total_live_lbs))) /
                         lag(total_live_lbs, default = first(total_live_lbs)) * 100
-    
-  )
+  ) %>%
+ filter(landed_year != min(landed_year))  # Exclude records with landed_year equal to the minimum for each city because these will have a perc change of 0 due to the fact that no comparison year exists before that
 
-City_aggregation2 <- City_aggregation2 %>%
+City_aggregation_Change <- City_aggregation_Change %>%
   mutate(
     perc_change_Val = round(perc_change_Val, 2),
     perc_change_lbs = round(perc_change_lbs, 2)
   )
 
-# Print the aggregated and percentage change data
-print(City_aggregation2)
 
+# Print the aggregated and percentage change data
+print(City_aggregation_Change)
+# Specify the file path and name
+csv_file_path <- "~/Resilience/GitReady/CHANGE"
 
 # Save the selected data to a new file (e.g., CSV format)
-write.csv(City_aggregation2, "City_aggregation2.csv", row.names = FALSE)
+write.csv(City_aggregation_Change, file= file.path(csv_file_path, "City_aggregation_Perc_change.csv"), row.names = FALSE)
+
+
+
 
 ```
 
@@ -166,38 +214,82 @@ Here we can set the criteria for what constitutes major change. Is it a 50% chan
 
 
 ```{r}
-# Set your threshold for significant negativechange
+# Set your threshold for significant negative change
 threshold_percent = 100
 threshold_value = -50
-threshold_pounds = 15
+threshold_pounds = 50  # Change to positive value
 
 # Identify cities with major changes
-significant_changes <- City_aggregation2 %>%
+significant_changes <- City_aggregation_Change %>%
   filter(abs(perc_change_Val) >= threshold_percent)
 
-#| abs(perc_change_lbs) > threshold_percent
-
-# Identify cities with interesting patterns
-interesting_patterns <- City_aggregation2 %>%
+# Identify cities with significant negative changes
+negative_changes <- City_aggregation_Change %>%
   filter(
     perc_change_Val <= threshold_value,
-    abs(perc_change_lbs) <= threshold_pounds
+    perc_change_lbs >= threshold_pounds
+    )
+
+
+# Extract relevant columns for the plot
+plot_data <- negative_changes %>%
+  select(dealer_city, dealer_state, perc_change_Val, landed_year)
+
+# Create a new column for labels with city and state information
+plot_data$city_label <- paste(tolower(plot_data$dealer_city), ",", plot_data$dealer_state)
+
+# Plot the percent change for each city with city and state labels
+library(ggplot2)
+
+plot_negative_changes <- ggplot(plot_data, aes(x = city_label, y = perc_change_Val, fill = dealer_state)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = landed_year), hjust = -0.2, size = 3, color = "black") +  # Add labels for the year
+  labs(title = "Cities with Significant Changes",
+       subtitle = "Significant Drops <-50% in the value of Fish landed & increases >50% in the pounds landed",
+       x = "City, State",
+       y = "Percent Change") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for better readability
+
+
+# Print the plot
+print(plot_negative_changes)
+
+# Specify the main folder path
+main_folder <- "C:/Users/Suzana.Mic/Documents/Resilience/GitReady/CHANGE"
+
+# Save the plot as an image in the "Change" folder (adjust file format as needed)
+ggsave(file.path(main_folder, "Negative_Changes_Plot.png"), plot = plot_negative_changes, width = 12, height = 8)
+
+
+```
+
+
+
+```{r}
+
+unique_cities <- significant_changes %>%
+  distinct(dealer_city)
+
+# Print or view the unique cities
+print(unique_cities)
+
+# Identify cities with interesting patterns
+interesting_patterns <- City_aggregation_Change %>%
+  filter(
+    perc_change_Val <= threshold_value,
+    perc_change_lbs >= threshold_pounds  # Corrected the condition
   )
 
 
-library(openxlsx)
+#library(openxlsx)
 # Specify the main folder path
-main_folder <- "C:/Users/Suzana.Mic/Documents/Resilience"
+main_folder <- "C:/Users/Suzana.Mic/Documents/Resilience/GitReady/CHANGE"
 
-# Create the "Change" folder if it doesn't exist
-change_folder <- file.path(main_folder, "CHANGE")
-if (!dir.exists(change_folder)) {
-  dir.create(change_folder, recursive = TRUE)
-}
 
 # Save the data frame to an Excel file in the "Change" folder
-write.xlsx(interesting_patterns, file.path(change_folder, "Interesting_Patterns.xlsx"), rowNames = FALSE)
-write.xlsx(significant_changes, file.path(change_folder, "Cities with Significant Changes.xlsx"), rowNames = FALSE)
+write.xlsx(interesting_patterns, file.path(main_folder, "Interesting_Patterns.xlsx"), rowNames = FALSE)
+write.xlsx(significant_changes, file.path(main_folder, "Cities with Significant Changes.xlsx"), rowNames = FALSE)
 
 ```
 
@@ -209,6 +301,9 @@ To identify patterns in the significant_changes data and check if certain years 
 This code groups the significant_changes data by landed_year, counts the number of cities with significant changes in each year, and creates a list of cities for each year. The results will show you the years with the highest counts of cities experiencing significant changes.
 
 ```{r}
+
+library(ggplot2)
+
 # Group by landed_year and count the number of cities with significant changes
 yearly_patterns <- significant_changes %>%
   group_by(landed_year) %>%
@@ -218,12 +313,18 @@ yearly_patterns <- significant_changes %>%
   ) %>%
   arrange(desc(cities_with_significant_change))
 
+# Identify the top 5 years
+top_5_years <- head(yearly_patterns, 5)
+
 # Print or view the results
 print(yearly_patterns)
 
 # Create a bar plot for yearly patterns
 yearly_patterns_plot <- ggplot(yearly_patterns, aes(x = landed_year, y = cities_with_significant_change)) +
   geom_bar(stat = "identity", fill = "skyblue") +
+  geom_text(data = top_5_years, aes(x = landed_year, y = cities_with_significant_change,
+                                    label = paste(landed_year, "(", cities_with_significant_change, " cities)")),
+            vjust = -0.5, size = 3, color = "red") +  # Add text labels for top 5 years with both year and count
   labs(title = "Years when many cities experienced significant changes",
        x = "Year",
        y = "Number of Cities") +
@@ -233,9 +334,153 @@ yearly_patterns_plot <- ggplot(yearly_patterns, aes(x = landed_year, y = cities_
 print(yearly_patterns_plot)
 
 
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/GitReady/CHANGE/YearswithChanges.png", plot = yearly_patterns_plot, width = 14, height = 6, units = "in")
 
 
 ```
+
+Negative Changes - Years
+
+```{r}
+
+library(ggplot2)
+
+# Filter the data to include only negative percent changes
+negative_changes <- City_aggregation_Change %>%
+  filter(perc_change_Val < 0)
+
+# Group by landed_year and count the number of cities with negative changes
+yearly_patterns <- negative_changes %>%
+  group_by(landed_year) %>%
+  summarise(
+    cities_with_negative_change = n(),
+    cities_list = toString(dealer_city)
+  ) %>%
+  arrange(desc(cities_with_negative_change))
+
+# Identify the top 5 years
+top_5_years <- head(yearly_patterns, 5)
+
+# Print or view the results
+print(yearly_patterns)
+
+# Create a bar plot for yearly patterns
+yearly_patterns_plot <- ggplot(yearly_patterns, aes(x = landed_year, y = cities_with_negative_change)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_text(data = top_5_years, aes(x = landed_year, y = cities_with_negative_change,
+                                    label = landed_year),
+            vjust = -0.5, size = 3, color = "red") +  # Add text labels for top 5 years with only the year in red
+  labs(title = "Years when many cities experienced drops in the value of landed fish (theshold less than zero)",
+       x = "Year",
+       y = "Number of Cities") +
+  theme_minimal()
+
+# Print the plot
+print(yearly_patterns_plot)
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/GitReady/CHANGE/YearswithNegativeChanges.png", plot = yearly_patterns_plot, width = 14, height = 6, units = "in")
+
+
+```
+
+Significant negative changes <-90 percent
+
+```{r}
+
+library(ggplot2)
+
+# Filter the data to include only negative percent changes with a threshold of -50 or more
+significant_negative_changes <- City_aggregation_Change %>%
+  filter(perc_change_Val < -90)
+
+# Group by landed_year and count the number of cities with significant negative changes
+yearly_patterns <- significant_negative_changes %>%
+  group_by(landed_year) %>%
+  summarise(
+    cities_with_negative_change = n()
+  ) %>%
+  arrange(desc(cities_with_negative_change))
+
+# Identify the top 5 years
+top_5_years <- head(yearly_patterns, 5)
+
+# Create a bar plot for yearly patterns
+yearly_patterns_plot_SN <- ggplot(yearly_patterns, aes(x = landed_year, y = cities_with_negative_change)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_text(data = top_5_years, aes(x = landed_year, y = cities_with_negative_change,
+                                    label = landed_year),
+            vjust = -0.5, size = 3, color = "red") +  # Add text labels for top 5 years with only the year in red
+  labs(title = "Years when many cities experienced SIGNIFICANT drops in the value of landed fish",
+        subtitle = "Based on a threshold of -90 or more in percent change",
+       x = "Year",
+       y = "Number of Cities") +
+  theme_minimal()
+
+# Print the plot
+print(yearly_patterns_plot_SN)
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/GitReady/CHANGE/YearswithSIGNIFICANTNegativeChanges.png", plot = yearly_patterns_plot_SN, width = 14, height = 6, units = "in")
+
+
+
+```
+
+
+
+Cities that are counted in the top five years with significant negative changes
+
+```{r}
+library(dplyr)
+
+# Assuming you have a threshold for significant drops, let's say -90
+threshold <- -90
+
+# Define the specific years
+target_years <- c(2000, 2005, 2008, 2016, 2018)
+
+# Filter the data to include only the specified years and negative percent changes with a threshold
+significant_negative_changes_cities <- City_aggregation_Change %>%
+  filter(landed_year %in% target_years, perc_change_Val < threshold)
+
+# Group by city and count the number of significant negative changes
+city_patterns <- significant_negative_changes_cities %>%
+  group_by(dealer_city, dealer_state) %>%
+  summarise(
+    total_significant_changes = n()
+  ) %>%
+  arrange(desc(total_significant_changes))
+
+# Print or view the results
+print(city_patterns)
+
+# Save the list as a CSV file
+write.csv(city_patterns, file = "cities_with_significant_negative_changes_in_the_top_5_years.csv", row.names = FALSE)
+
+# Create a bar plot for city and state patterns with faceting by state
+city_patterns_plot <- ggplot(city_patterns, aes(x = reorder(dealer_city, -total_significant_changes), y = total_significant_changes)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Cities with Significant Negative Changes - top 5 years",
+       x = "City",
+       y = "Number of Significant Changes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ dealer_state, scales = "free")
+print(city_patterns_plot)
+
+# Save the plot as an image (PNG format by default)
+ggsave("cities_with_significant_negative_changes_in the top 5 years.png", plot = city_patterns_plot, width = 14, height = 6, units = "in")
+
+```
+
+## Cities that had a lot of Major drops in the value of landed fish
+```{r}
+
+```
+
+
+
 
 
 ### 2. Stable cities
@@ -252,30 +497,24 @@ This will create a table (max_no_change_cities) containing cities that exhibit t
 ```{r}
 
 # Set thresholds for stable changes
-threshold_stable = 10
+threshold_stable_val = 10
 
 # Identify cities with stable changes
-stable_cities <- City_aggregation2 %>%
+stable_cities_val <- City_aggregation_Change %>%
   filter(
-    abs(perc_change_Val) <= threshold_stable,
-    abs(perc_change_lbs) <= threshold_stable
+    abs(perc_change_Val) <= threshold_stable_val,
+    abs(perc_change_lbs) <= threshold_stable_val
   )
 
 library(openxlsx)
 # Specify the main folder path
-main_folder <- "C:/Users/Suzana.Mic/Documents/Resilience"
-
-# Create the "Change" folder if it doesn't exist
-stable_folder <- file.path(main_folder, "STABLE")
-if (!dir.exists(stable_folder)) {
-  dir.create(stable_folder, recursive = TRUE)
-}
+main_folder <- "C:/Users/Suzana.Mic/Documents/Resilience/GitReady/STABLE"
 
 # Group by dealer_city and count the number of years with "no change" pattern
-cities_no_change_counts <- stable_cities %>%
+cities_no_change_counts <- stable_cities_val %>%
   group_by(dealer_city, dealer_state) %>%
   summarise(
-    no_change_count = sum(abs(perc_change_Val) <= threshold_stable)
+    no_change_count = sum(abs(perc_change_Val) <= threshold_stable_val)
   ) %>%
   arrange(desc(no_change_count))
 
@@ -288,8 +527,8 @@ print(max_no_change_cities)
 
 
 # Save the data frame to an Excel file in the "Change" folder
-write.xlsx(stable_cities, file.path(stable_folder, "Not much change.xlsx"), rowNames = FALSE)
-write.xlsx(cities_no_change_counts, file.path(stable_folder, "No_change counts.xlsx"), rowNames = FALSE)
+write.xlsx(stable_cities_val, file.path(main_folder, "StableCities.xlsx"), rowNames = FALSE)
+write.xlsx(cities_no_change_counts, file.path(main_folder, "StabkeCitiesCounts.xlsx"), rowNames = FALSE)
 
 
 ```

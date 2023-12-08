@@ -1,0 +1,151 @@
+---
+title: "Looking for Trends at the Community Level - Interesting Patterns: Decrease in Values and Increase in Pounds"
+author: "Suzana Blake"
+format: html
+---
+
+
+```{r setup, include=FALSE}
+
+Species10 <- readRDS("~/Resilience/GitReady/UpdatedData/top_10_data.rds")
+```
+
+## Data Clean
+
+```{r}
+library(dplyr)
+
+# Step 1: Filter out rows with NA in dealer_city
+Species10 <- Species10 %>%
+  filter(dealer_city != "#N/A", !is.na(dealer_city))  # Exclude rows with *N/A and NAs in dealer_city
+
+Species10 <- Species10 %>%
+  filter(dealer_city != "UNRESOLVED" & dealer_city != "UNKNOWN")
+
+
+# Step 2: Filter for values greater than 1 in Adjusted_Val
+Species10 <- Species10 %>%
+  filter(Adjusted_Val > 5000 & !is.na(Adjusted_Val))
+
+
+```
+
+### Bay St Louis
+
+```{r}
+
+# Filter data for Bay Saint Louis in Mississippi
+MS <- subset(Species10, dealer_state == "MS")
+# Select unique values from the 'dealer_city' column
+unique_cities <- unique(MS$dealer_city)
+
+# Print the unique cities
+print(unique_cities)
+
+
+bay_st_louis <- subset(MS, dealer_city == "BAY SAINT LOUIS")
+
+```
+
+#Trends for landed Pounds
+
+
+```{r}
+library(ggplot2)
+
+# Plotting trends for landed pounds and values over the years
+Bay_Louis_plot <- ggplot(bay_st_louis, aes(x = landed_year)) +
+  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
+  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
+  labs(title = "Trends for Bay Saint Louis, Mississippi",
+       x = "Year",
+       y = "Landed Pounds and Values",
+       color = "Legend") +
+  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
+  theme_minimal()
+
+ggplot(bay_st_louis, aes(x = landed_year)) +
+  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
+  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
+  labs(title = "Trends for Bay Saint Louis, Mississippi",
+       x = "Year",
+       y = "Landed Pounds",
+       color = "Legend") +
+  scale_y_continuous(name = "Landed Pounds", sec.axis = sec_axis(~., name = "Landed Values")) +
+  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
+  theme_minimal()
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/GitReady/Community_Trends/BayStLouisTrends.png", plot = Bay_Louis_plot, width = 14, height = 6, units = "in")
+ print(Bay_Louis_plot)
+
+
+```
+Contribution of different species
+
+```{r}
+# Plotting the contribution of different species to landed pounds
+ggplot(bay_st_louis, aes(x = common_name_cleaned, y = live_lbs)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(title = "Contribution of Different Species to Landed Pounds for Bay St Louis, MS",
+       x = "Species",
+       y = "Landed Pounds") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+Bay_species_Val <- ggplot(bay_st_louis, aes(x = common_name_cleaned, y = Adjusted_Val)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(title = "Contribution of Different Species for Bay St Louis, MS",
+       subtitle = "Landed Fish contribution to Total Value",
+       x = "Species",
+       y = "Value of Landed Pounds") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/GitReady/Community_Trends/BaySpeciesContribution_Val.png", plot = Bay_species_Val, width = 14, height = 6, units = "in")
+ print(Bay_species_Val)
+
+
+
+```
+
+
+```{r}
+bay_BrownShrimp <- subset(bay_st_louis, common_name_cleaned == "Brown Shrimp")
+
+Bay_BrShrimp_plot <- ggplot(bay_BrownShrimp, aes(x = landed_year)) +
+  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
+  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
+  labs(title = "Trends for Bay Saint Louis, Mississippi - Brown Shrimp",
+       x = "Year",
+       y = "Landed Pounds and Values",
+       color = "Legend") +
+  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
+  theme_minimal()
+
+print(Bay_BrShrimp_plot)
+
+ggplot(bay_st_louis, aes(x = landed_year)) +
+  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
+  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
+  labs(title = "Trends for Bay Saint Louis, Mississippi",
+       x = "Year",
+       y = "Landed Pounds",
+       color = "Legend") +
+  scale_y_continuous(name = "Landed Pounds", sec.axis = sec_axis(~., name = "Landed Values")) +
+  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
+  theme_minimal()
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/GitReady/Community_Trends/BayStLouisTrends_BrownShrimp.png", plot = Bay_BrShrimp_plot, width = 14, height = 6, units = "in")
+ print(Bay_BrShrimp_plot)
+
+
+```
+### 
+
+```{r}
+
+```
+

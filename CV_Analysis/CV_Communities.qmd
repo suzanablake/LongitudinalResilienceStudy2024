@@ -89,7 +89,7 @@ options(scipen = 999) # takes away the scientific notation
 Load Inflation Adjusted Data
 ```{r setup, include=FALSE}
 # Load the GI data - with inflation adjusted values
-GI <- readRDS("~/Resilience/UpdatedData/GI.RData")
+GI <- readRDS("~/Resilience/GitReady/UpdatedData/GI.RData")
 
 ```
 Brief summary
@@ -172,7 +172,7 @@ head(top_10_data)
 unique_species <- unique(top_10_data$common_name_cleaned)
 print(unique_species)
 # Specify the file path and name
-file_path <- "~/Resilience/UpdatedData/top_10_data.rds"
+file_path <- "~/Resilience/GitReady/UpdatedData/top_10_data.rds"
 
 # Save the data frame to an RDS file
 saveRDS(top_10_data, file = file_path)
@@ -209,10 +209,11 @@ City_aggregation<- top_10_data %>%
 
 # Print the aggregated and percentage change data
 print(City_aggregation)
-
+# Specify the file path and name
+csv_file_path <- "~/Resilience/GitReady/UpdatedData"
 
 # Save the selected data to a new file (e.g., CSV format)
-write.csv(City_aggregation, "City_aggregation.csv", row.names = FALSE)
+write.csv(City_aggregation, file= file.path(csv_file_path, "City_aggregation.csv"), row.names = FALSE)
 
 
 ```
@@ -234,9 +235,6 @@ cv_data <- City_aggregation %>%
 
 ```
 
-Identify Cities with High Variability
-
-
 
 ##Identify Cities with High Variability in Landed Values
 ```{r}
@@ -244,7 +242,7 @@ high_variability_cities <- cv_data[order(-cv_data$Coefficient_of_Variation), ]
 library(openxlsx)
 
 # Specify the full file path and name
-file_path <- "C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/high_variability_cities.xlsx"
+file_path <- "C:/Users/Suzana.Mic/Documents/Resilience/GitReady/CV_Analysis/high_variability_cities.xlsx"
 
 # Write the DataFrame to an Excel file
 write.xlsx(high_variability_cities, file_path, rowNames = FALSE)
@@ -258,14 +256,14 @@ library(ggplot2)
 high_cv_cities <- subset(high_variability_cities, Coefficient_of_Variation > 100)
 
 # Bar plot for cities with high CV, facet by state
-HighCV <- ggplot(high_cv_cities, aes(x = reorder(dealer_city, -Coefficient_of_Variation), y = Coefficient_of_Variation)) +
+HighCV_val <- ggplot(high_cv_cities, aes(x = reorder(dealer_city, -Coefficient_of_Variation), y = Coefficient_of_Variation)) +
   geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
   labs(title = "Cities with CV > 100", x = "City", y = "Coefficient of Variation") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   facet_wrap(~ dealer_state, scales = "free")
 
 # Save the plot as an image (PNG format by default)
-ggsave("~/Resilience/CV_Analysis/Figures/HighCV.png", plot = HighCV, width = 14, height = 6, units = "in")
+ggsave("~/Resilience/GitReady/CV_Analysis/Figures/HighCV_values.png", plot = HighCV_val, width = 14, height = 6, units = "in")
 
 
 ```
@@ -285,7 +283,7 @@ FL_LA_CV<-ggplot(fl_la_cities, aes(x = reorder(dealer_city, -Coefficient_of_Vari
   facet_wrap(~ dealer_state, scales = "free")
 
 # Save the plot as an image (PNG format by default)
-ggsave("~/Resilience/CV_Analysis/Figures/FL_LA.png", plot = FL_LA_CV, width = 14, height = 6, units = "in")
+ggsave("~/Resilience/GitReady/CV_Analysis/Figures/FL_LA_High_val.png", plot = FL_LA_CV, width = 14, height = 6, units = "in")
 
 ```
 
@@ -315,33 +313,6 @@ ggplot(fl_la_cities_M, aes(x = reorder(dealer_city, -Coefficient_of_Variation), 
 ```
 
 
-Bar plot for FL and LA: low variability
-```{r}
-low_cv_cities <- subset(high_variability_cities, Coefficient_of_Variation < 40)
-
-
-
-# Bar plot for FL and LA
-lowCV_Val <- ggplot(low_cv_cities, aes(x = reorder(dealer_city, -Coefficient_of_Variation), y = Coefficient_of_Variation)) +
-  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
-  labs(title = "Cities with  Low CV - less than 40% for Values", x = "City", y = "Coefficient of Variation: Values") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-   facet_wrap(~ dealer_state, scales = "free")
-
-# Save the plot as an image (PNG format by default)
-ggsave("~/Resilience/CV_Analysis/Figures/LowCV_Val.png", plot = lowCV_Val, width = 14, height = 6, units = "in")
-
-```
-
-
-
-
-
-
-
-
-
-
 ## 2.Calculate Coefficient of Variation for Total Landed Pounds
 
 ```{r}
@@ -353,7 +324,6 @@ cv_lbs <- City_aggregation %>%
     SD_Total_lbs = sd(total_live_lbs, na.rm = TRUE),
     CoefVar_lbs = ifelse(!is.na(SD_Total_lbs), round((SD_Total_lbs / Mean_Total_lbs) * 100, 2), NA)
   )
-
 ```
 
 ##Identify Cities with High Variability: Pounds
@@ -364,7 +334,7 @@ high_cities_LBS <- cv_lbs[order(-cv_lbs$CoefVar_lbs), ]
 library(openxlsx)
 
 # Specify the full file path and name
-file_path <- "C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/high_cities_LBS.xlsx"
+file_path <- "C:/Users/Suzana.Mic/Documents/Resilience/GitReady/CV_Analysis/high_cities_LBS.xlsx"
 
 # Write the DataFrame to an Excel file
 write.xlsx(high_cities_LBS, file_path, rowNames = FALSE)
@@ -382,11 +352,16 @@ cv_cities_lbs <- subset(high_cities_LBS, CoefVar_lbs > 100)
 
 
 # Bar plot for cities with high CV, facet by state
-ggplot(cv_cities_lbs, aes(x = reorder(dealer_city, -CoefVar_lbs), y = CoefVar_lbs)) +
+HighCV_pounds <- ggplot(cv_cities_lbs, aes(x = reorder(dealer_city, -CoefVar_lbs), y = CoefVar_lbs)) +
   geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
   labs(title = "Cities with CV > 100", x = "City", y = "Coefficient of Variation for Landed Pounds") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   facet_wrap(~ dealer_state, scales = "free")
+# Save the plot as an image (PNG format by default)
+ggsave("~/Resilience/GitReady/CV_Analysis/Figures/HighCV_pounds.png", plot = HighCV_pounds, width = 14, height = 6, units = "in")
+
+
+
 ```
 
 
@@ -412,28 +387,28 @@ ggplot(fl_la_cities_lbs, aes(x = reorder(dealer_city, -CoefVar_lbs), y = CoefVar
 sorted_low_variability_cities <- cv_data[order(cv_data$Coefficient_of_Variation, decreasing = TRUE), ]
 
 # Filter cities with CV equal or smaller than 60
-low_variability_cities <- sorted_low_variability_cities[sorted_low_variability_cities$Coefficient_of_Variation <= 40, ]
+low_variability_cities_Val <- sorted_low_variability_cities[sorted_low_variability_cities$Coefficient_of_Variation <= 40, ]
 
 # Specify the full file path and name for the low variability cities
-file_path_low_variability <- "C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/low_variability_cities.xlsx"
+file_path_low_variability <- "C:/Users/Suzana.Mic/Documents/Resilience/GitReady/CV_Analysis/low_variability_cities_Val.xlsx"
 
 # Write the DataFrame to an Excel file
 library(openxlsx)
-write.xlsx(low_variability_cities, file_path_low_variability, rowNames = FALSE)
+write.xlsx(low_variability_cities_Val, file_path_low_variability, rowNames = FALSE)
 
 ```
-##Graphical Representation: low variability 
+##Graphical Representation: low variability for Values 
 Bar Plot
 ```{r}
 
 # Bar plot for cities with low CV, facet by state
-LowVar_val <- ggplot(low_variability_cities, aes(x = reorder(dealer_city, Coefficient_of_Variation), y = Coefficient_of_Variation)) +
+LowVar_val <- ggplot(low_variability_cities_Val, aes(x = reorder(dealer_city, Coefficient_of_Variation), y = Coefficient_of_Variation)) +
   geom_bar(stat = "identity", fill = "green", alpha = 0.7) +
-  labs(title = "Cities with Low Variability or a CV <= 40", x = "City", y = "Coefficient of Variation") +
+  labs(title = "Cities with Low Variability or a CV <= 40", x = "City", y = "Coefficient of Variation: Values") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   facet_wrap(~ dealer_state, scales = "free")
 
-ggsave("~/Resilience/CV_Analysis/Figures/Lowvar_Val.png", plot = LowVar_val, width = 14, height = 6, units = "in")
+ggsave("~/Resilience/GitReady/CV_Analysis/Figures/Lowvar_Val.png", plot = LowVar_val, width = 14, height = 6, units = "in")
 
 
 ```
@@ -449,7 +424,7 @@ low_variability_cities_LBS <- sorted_low_variability_cities_LBS[sorted_low_varia
 library(openxlsx)
 
 # Specify the full file path and name
-file_path <- "C:/Users/Suzana.Mic/Documents/Resilience/CV_Analysis/Output/low_variability_cities_LBS.xlsx"
+file_path <- "C:/Users/Suzana.Mic/Documents/Resilience/GitReady/CV_Analysis/low_variability_cities_LBS.xlsx"
 
 # Write the DataFrame to an Excel file
 write.xlsx(low_variability_cities_LBS, file_path, rowNames = FALSE)
@@ -463,12 +438,12 @@ Bar Plot
 library(ggplot2)
 
 # Bar plot for cities with high CV, facet by state
-ggplot(low_variability_cities_LBS, aes(x = reorder(dealer_city, -CoefVar_lbs), y = CoefVar_lbs)) +
+LowVar_LBS <- ggplot(low_variability_cities_LBS, aes(x = reorder(dealer_city, -CoefVar_lbs), y = CoefVar_lbs)) +
   geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
   labs(title = "Cities with Low relative Variability or CV <= 40", x = "City", y = "Coefficient of Variation for Landed Pounds") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   facet_wrap(~ dealer_state, scales = "free")
-
+ggsave("~/Resilience/GitReady/CV_Analysis/Figures/Lowvar_LBS.png", plot = LowVar_LBS, width = 14, height = 6, units = "in")
 ```
 
 
