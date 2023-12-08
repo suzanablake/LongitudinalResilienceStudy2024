@@ -68,7 +68,7 @@ Inflation Adjustment
 GOM$X <- NULL #deletes the X column 
 GOM
 
-Inflation <- read.csv("InflationAdj.csv")
+Inflation <- read.csv("~/Resilience/DATA/InflationAdj.csv")
 Infl_2020 <- Inflation[Inflation$landed_year==2020,][,2] #this is a dataframe to use to adjust the value to 2020
 
 Infl_2020 <- Inflation[Inflation$Year==2020,][,2]
@@ -81,13 +81,13 @@ GOM_I<- left_join (GOM,Inflation)
 
 GI <- GOM_I %>% mutate(Adjust_factor=Infl_2020/Inflation_index, Adjusted_Val=round(Adjust_factor*value,0)) #created a new column with the operation for Infl adjustement and then rounded the results
 
-new_folder_path <- "~/Resilience/UpdatedData"
+new_folder_path <- "~/Resilience/GitReady/UpdatedData"
 dir.create(new_folder_path, showWarnings = FALSE)
 # Save the data frame to an RDS file in the new folder
 rds_file_path <- file.path(new_folder_path, "GI.RData")
 saveRDS(GI, file = rds_file_path)
-
-#glimpse(GI)
+csv_file_path <- "~/Resilience/GitReady/UpdatedData"
+write.csv(Inflation, file = file.path(csv_file_path, "Inflation.csv"), row.names = FALSE)
 
 ```
 
@@ -102,55 +102,6 @@ Understanding the Species presented in this dataset
 Last work here: 8/23/23 - after Brittany showed me how to identify and group species I did some work to streamline the species and make sure my pounds and value add up correctly. 
 ran into some issues as I don't know if I should group crab with blue crab for example
 
-
-```{r}
-#| echo: false
-#| warning: false
-
-com_names<-unique(GI$common_name)
-order(com_names)
-list(com_names)
-
-
-com_names[str_detect(com_names, regex("grouper", ignore_case = T))]# pulls out everything that contains shrimp in it regardless of capitalization
-com_names[str_detect(com_names, regex("shrimp", ignore_case = T))]
-com_names[str_detect(com_names, regex("crab", ignore_case = T))]
-com_names[str_detect(com_names, regex("oyster", ignore_case = T))]
-com_names[str_detect(com_names, regex("tuna", ignore_case = T))]
-com_names[str_detect(com_names, regex("snapper", ignore_case = T))]
-com_names[str_detect(com_names, regex("drum", ignore_case = T))]
-
-BWP_shrimp <- c("Brown Shrimp",  "White Shrimp","Pink Shrimp")
-Other_shrimp <- c("SHRIMP, ATLANIC SEABOB", "SHRIMP, ROYAL RED", "SHRIMP, ROCK", "SHRIMPS, PENAEOID", "SHRIMP, ROUGHNECK", "SHRIMP, BAIT", "SHRIMP, PISTOL OR SNAPPING", "SHRIMP, BANDED CORAL", "SHRIMP, PEPPERMINT", "SHRIMP, CLEANER", "SHRIMP, SPOTTED CLEANER", "SHRIMP, MARINE", "SHRIMP, MANTIS","SHRIMP,ROCK", "SHRIMP,FW", "SHRIMP, FARFANTEPENAEUS SPP","SHRIMP, PEDERSON CLEANER", "SHRIMP, GOLDEN CORAL", "SHRIMPS, BAIT", "SHRIMPS, PISTOL OR SNAPPING", "SHRIMPS, MANTIS")
-Grouper <- c("GROUPERS", "GOLIATH GROUPER", "GROUPER, WARSAW","GROUPER, GAG", "GROUPER, YELLOWEDGE","GROUPER, RED","GROUPER, BLACK", "GROUPER, YELLOWFIN", "GROUPER, SNOWY","GROUPER, NASSAU","GROUPER, YELLOWMOUTH","GROUPER, MISTY", "GROUPER, TIGER","GROUPER, MARBLED", "GROUPER, HIND RED","GROUPER, SCAMP", "GROUPER, SPECKLED HIND", "GROUPER, CONEY","GROUPERS, SERRANIDAE (FAMILY)")
-Tuna <- c("TUNA", "TUNA, BLACKFIN", "TUNA, BLUEFIN","TUNA, YELLOWFIN", "TUNA, BIGEYE", "TUNA, SKIPJACK","TUNA, LITTLE TUNNY", "TUNA, ALBACORE")
-Snapper <- c("SNAPPER, RED","SNAPPER, GRAY","SNAPPER, VERMILION","SNAPPER, MUTTON","SNAPPER, LANE","SNAPPER, YELLOWTAIL", "SNAPPERS","SNAPPER, SILK", "SNAPPER, CUBERA", "SNAPPER, BLACKFIN", "SNAPPER, QUEEN","SNAPPER, GLASSEYE", "SNAPPER, DOG", "SNAPPER, BLACK", "SNAPPER, MAHOGANY","SNAPPER, CARIBBEAN RED","SNAPPERS, LUTJANIDAE (FAMILY)")
-
-GI$group[GI$common_name %in% BWP_shrimp]<-"BWP Shrimp"
-GI$group[GI$common_name %in% Other_shrimp]<-"Other Shrimp"
-GI$group[GI$common_name %in% Grouper]<-"Grouper"
-GI$group[GI$common_name %in% Tuna]<-"Tuna"
-GI$group[GI$common_name %in% Snapper]<-"Snapper"
-#GOM$group[GOM$common_name %in% Snapper]<-"Snapper"
-
-# check this page for more tips on strings and piping https://stringr.tidyverse.org/
-
-#Shrimp <- com_names[str_detect(com_nms, regex("shrimp", ignore_case = T))] 
-#Grouper <- com_names[str_detect(com_names, regex("grouper", ignore_case = T))]
-
-#GOM$group[test$common_name %in% Shrimp2]<-"shrimp" # we create a column named "group" and placed in it everything that contains the word shrimp
-#GOM$group[test$common_name %in% Grouper]<-"grouper"
-
-
-#recshrimp<-c("Brown Shrimp", "White Shrimp", "Pink Shrimp") #created a category for all the recreational fish species 
-#test$group[test$common_name %in% recshrimp]<-"rec_shrimp"
-
-#Snap_group <- com_nms[str_detect(com_nms, regex("grouper", ignore_case = T))| str_detect(com_nms, regex("snapper", ignore_case = T))] 
-#test$group[test$common_name %in% Snap_group]<-"snapper-grouper"
-
-knitr::opts_chunk$set(echo = FALSE)
-
-```
 
 
 ## Louisiana
