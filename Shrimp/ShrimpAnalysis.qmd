@@ -1,0 +1,1322 @@
+---
+title: "Shrimp Analysis - March 2024"
+author: "SB"
+format: html
+---
+
+```{r}
+#| echo: false
+#| warning: false
+
+library("tidyverse")
+library("dplyr")
+library("ggplot2")
+
+options(scipen = 999) # takes away the scientific notation 
+```
+
+
+
+
+
+```{r}
+# Load the GI data - with inflation adjusted values
+GI <- readRDS("~/Resilience/GitReady/UpdatedData/GI.RData")
+
+# Display a summary of the GI data
+summary(GI)
+
+
+
+```
+
+```{r}
+com_names<-unique(GI$common_name)
+order(com_names)
+list(com_names)
+com_names[str_detect(com_names, regex("MENHADENS", ignore_case = T))]
+com_names[str_detect(com_names, regex("MENHADEN", ignore_case = F ))]
+com_names[str_detect(com_names, regex("GROUPERS", ignore_case = T ))]
+com_names[str_detect(com_names, regex("GROUPER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("SNAPPER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("OYSTER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("CRAB,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("STONE", ignore_case = T ))]
+com_names[str_detect(com_names, regex("CRAB, BLUE", ignore_case = T ))]
+com_names[str_detect(com_names, regex("LOBSTER", ignore_case = T ))]
+com_names[str_detect(com_names, regex("SHRIMP", ignore_case = T ))]
+
+
+GI <- GI %>%
+  mutate(common_name_cleaned = case_when(
+    grepl("GROUPER,\\s*(WARSAW|GAG|YELLOWEDGE|RED|BLACK|YELLOWFIN|SNOWY|NASSAU|YELLOWMOUTH|MISTY|TIGER|MARBLED|HIND RED|SCAMP|SPECKLED HIND|CONEY)", common_name, ignore.case = TRUE) ~ "Grouper",
+    grepl("SNAPPER,\\s*(RED|GRAY|VERMILION|MUTTON|LANE|YELLOWTAIL|SILK|CUBERA|BLACKFIN|QUEEN|GLASSEYE|DOG|BLACK|MAHOGANY|CARIBBEAN RED)", common_name, ignore.case = TRUE) ~ "Snapper",
+    grepl("CRAB,\\s*(FLORIDA STONE|STONE)", common_name, ignore.case = TRUE) ~ "Stone Crab",
+    
+    grepl("CRABS,\\s*(FLORIDA STONE|STONE)", common_name, ignore.case = TRUE) ~ "Stone Crab",
+    grepl("CRABS,\\s*(BLUE LAND|BLUE)", common_name, ignore.case = TRUE) ~ "Blue Crab",
+    grepl("CRAB,\\s*(BLUE LAND|BLUE)", common_name, ignore.case = TRUE) ~ "Blue Crab",
+    grepl("LOBSTER,\\s*(CARIBEAN SPINY|SPINY|SPOTTED SPINY|SPANISH|)", common_name, ignore.case = TRUE) ~ "Spiny Lobster",
+    TRUE ~ common_name
+  ))
+```
+
+
+
+
+
+
+```{r}
+library(dplyr)
+
+# Group the data by dealer_city and count the distinct states for each city
+city_state_counts <- GI %>%
+  group_by(dealer_city) %>%
+  summarize(
+    unique_states = n_distinct(dealer_state),
+    total_records = n()
+  )
+
+# Filter cities linked to more than one state
+cities_with_multiple_states <- city_state_counts %>%
+  filter(unique_states > 1)
+
+
+# View the results
+print(cities_with_multiple_states)
+
+target_city <- 'FREEPORT'
+
+# Filter the original dataset to include only the records for the target city
+records_for_target_city <- GI %>%
+  filter(dealer_city == target_city)
+
+# View the results
+print(records_for_target_city)
+
+# Summarize Adjusted_val by state and year
+summary_by_state <- records_for_target_city %>%
+  group_by(dealer_state, landed_year) %>%
+  summarize(total_adjusted_val = sum(Adjusted_Val))
+
+# Plot the summarized data
+library(ggplot2)
+```
+
+
+```{r}
+library(dplyr)
+
+ShrimpSpecies <- c("Brown Shrimp","White Shrimp","Pink Shrimp") 
+
+# Create a new data frame for Shrimp
+ShrimpData <- GI %>%
+  filter(common_name_cleaned %in% ShrimpSpecies) 
+
+unique_species <- unique(ShrimpData$common_name_cleaned)
+print(unique_species)
+
+# Specify the file path and name
+file_path <- "~/Resilience/GitReady/UpdatedData/ShrimpData.rds"
+
+# Save the data frame to an RDS file
+saveRDS(ShrimpData, file = file_path)
+
+
+
+
+
+```
+
+
+```{r}
+ggplot(ShrimpData, aes(x = landed_year, y = live_lbs)) +
+  stat_summary(geom = "bar", fun = "mean", na.rm = TRUE, position = position_stack(), aes(fill = common_name)) +
+  labs(
+    title = "Fishing Trends for Shrimp in the Gulf of Mexico",
+    subtitle = "Landed Pounds",
+    x = "Landed Year", y = "Total Landed Pounds",
+    fill = "Species"
+  ) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_manual(
+    values = c("Brown Shrimp" = "brown", "Pink Shrimp" = "pink", "White Shrimp" = "lightblue")
+  )
+
+```
+
+
+```{r}
+
+ggplot(ShrimpData, aes(x = landed_year, y = live_lbs)) +
+  stat_summary(geom = "bar", fun = "mean", na.rm = TRUE, position = position_stack(), aes(fill = common_name_cleaned)) +
+  labs(
+    title = "Fishing Trends for Shrimp",
+    subtitle = "Landed Pounds by Dealer State",
+    x = "Landed Year", y = "Total Landed Pounds",
+    fill = "Species"
+  ) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_manual(
+    values = c("Brown Shrimp" = "brown", "Pink Shrimp" = "pink", "White Shrimp" = "lightblue")
+  ) +
+  facet_wrap(~ dealer_state, scales = "free_x", ncol = 1) # or use facet_grid
+
+
+
+```
+
+```{r}
+library(dplyr)
+
+# Filter out extreme values
+FilteredData <- ShrimpData %>%
+  filter(!(dealer_state == "AL" & landed_year %in% c(1978, 1979))) # Replace Year1 and Year2 with the specific years
+
+# Then plot using FilteredData instead of ShrimpData
+ggplot(FilteredData, aes(x = landed_year, y = live_lbs)) +
+  stat_summary(geom = "bar", fun = "mean", na.rm = TRUE, position = position_stack(), aes(fill = common_name_cleaned)) +
+  labs(
+    title = "Fishing Trends for Shrimp",
+    subtitle = "Landed Pounds by Dealer State",
+    x = "Landed Year", y = "Total Landed Pounds",
+    fill = "Species"
+  ) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_manual(
+    values = c("Brown Shrimp" = "brown", "Pink Shrimp" = "pink", "White Shrimp" = "lightblue")
+  ) +
+  facet_wrap(~ dealer_state, scales = "free_x", ncol = 1) # or use facet_grid
+
+  
+  
+ 
+```
+
+
+```{r}
+
+# Selecting the necessary columns
+ShrimpData_short <- ShrimpData %>% select(landed_year, county_name, dealer_city, common_name, live_lbs, Adjusted_Val)
+
+# Pivoting the data
+Shrimp_Fig <- ShrimpData_short %>%
+  pivot_longer(
+    cols = c(live_lbs, Adjusted_Val),
+    names_to = "ShrimpSpecies",
+    values_to = "ValuesBoth" , 
+    names_pattern = "(.*)",
+    names_repair = function(x) {
+      x <- sub("live_lbs", "Landed Pounds", x)
+      x <- sub("Adjusted_Val", "Values", x)
+      x
+    }
+  )
+
+# Creating the plot
+ggplot(Shrimp_Fig, aes(x = landed_year, y = ValuesBoth)) +
+  facet_wrap(~common_name, ncol = 1) +
+  stat_summary(geom = "line", fun = "sum", aes(color = ShrimpSpecies)) +
+  labs(
+    x = "Landed Year",
+    y = "Inflation Adjusted Values - 2020",
+    color = "Landings"
+  )
+
+
+```
+Identifying consolidation
+
+```{r}
+
+ShrimpAll <- GI %>%
+  filter(common_name_cleaned %in% ShrimpSpecies) 
+names(ShrimpAll)
+
+
+```
+
+Create a dataset for the dealers (combining corporate_name with dealer_id because often times corporate name is more available)
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Group by year and count unique corporate names across all states
+dealers_per_year <- ShrimpAll %>%
+  group_by(landed_year) %>%
+  summarise(number_of_dealers = n_distinct(corporate_name, na.rm = TRUE))
+
+```
+
+
+
+```{r}
+# Plot for the total number of dealers each year across the entire dataset with a trend line
+Deal_tot <-ggplot(dealers_per_year, aes(x = landed_year, y = number_of_dealers)) +
+  geom_line() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Adding a linear trend line
+  labs(
+    title = "Total Number of Dealers Over Time with Trend Line",
+    x = "Year",
+    y = "Number of Dealers"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Shrimp/Dealers_total.png", plot = Deal_tot, width = 10, height = 6, dpi = 300)
+
+```
+
+
+
+
+
+```{r}
+# Create the combined dealer identifier and count unique dealers per year and state
+dealer_count <- ShrimpAll %>%
+  mutate(dealer_identifier = ifelse(is.na(dealer_id) | dealer_id == "", corporate_name, dealer_id)) %>%
+  group_by(landed_year, dealer_state) %>%
+  summarise(number_of_dealers = n_distinct(dealer_identifier, na.rm = TRUE)) 
+
+
+# Plot
+ggplot(dealer_count, aes(x = landed_year, y = number_of_dealers, group = dealer_state, color = dealer_state)) +
+  geom_line() +
+  labs(
+    title = "Number of Dealers per State Over Time",
+    x = "Year",
+    y = "Number of Dealers",
+    color = "State"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Adjusts the angle of x-axis labels for readability
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Assuming your dataset is named 'ShrimpAll'
+
+# Group by year and state, and count unique corporate names
+dealers_per_year_state <- ShrimpAll %>%
+  group_by(landed_year, dealer_state) %>%
+  summarise(number_of_dealers = n_distinct(corporate_name, na.rm = TRUE))
+
+# Plot
+ggplot(dealers_per_year_state, aes(x = landed_year, y = number_of_dealers, group = dealer_state, color = dealer_state)) +
+  geom_line() +
+  labs(
+    title = "Number of Dealers per State Over Time (Based on Corporate Name)",
+    x = "Year",
+    y = "Number of Dealers",
+    color = "State"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+
+```{r}
+# Group by year and state, and count unique corporate names
+dealers_per_year_state <- ShrimpAll %>%
+  group_by(landed_year, dealer_state) %>%
+  summarise(number_of_dealers = n_distinct(dealer_id, na.rm = TRUE))
+
+# Plot
+Dealers_St <- ggplot(dealers_per_year_state, aes(x = landed_year, y = number_of_dealers, group = dealer_state, color = dealer_state)) +
+  geom_line() +
+  labs(
+    title = "Number of Dealers per State Over Time (Based on Dealer ID)",
+    x = "Year",
+    y = "Number of Dealers",
+    color = "State"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Shrimp/Dealers_State.png", plot = Dealers_St, width = 10, height = 6, dpi = 300)
+
+
+```
+
+
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Assuming your dataset is named 'ShrimpAll'
+
+# Step 1: Aggregate the data
+total_lbs_per_year_state <- ShrimpAll %>%
+  group_by(landed_year, dealer_state) %>%
+  summarise(total_live_lbs = sum(live_lbs, na.rm = TRUE)) # Summing live lbs per year per state
+
+# Step 2: Create the plot
+ggplot(total_lbs_per_year_state, aes(x = landed_year, y = total_live_lbs, group = dealer_state, color = dealer_state)) +
+  geom_line() + # or geom_bar(stat = "identity") for a bar plot
+  labs(
+    title = "Total Landed Pounds of Fish per State Over Time",
+    x = "Year",
+    y = "Total Landed Pounds",
+    color = "State"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+#Values
+
+```{r}
+
+# Step 1: Aggregate the data
+total_val_per_year_state <- ShrimpAll %>%
+  group_by(landed_year, dealer_state) %>%
+  summarise(total_Val = sum(Adjusted_Val, na.rm = TRUE)) # Summing live lbs per year per state
+
+# Step 2: Create the plot
+ValuesSt <- ggplot(total_val_per_year_state, aes(x = landed_year, y = total_Val, group = dealer_state, color = dealer_state)) +
+  geom_line(size=1.5) +
+  scale_color_manual(values = c("blue", "red", "green", "orange", "purple")) +  # Add as many colors as needed
+  labs(
+    title = "Total Values per State Over Time",
+    x = "Year",
+    y = "Total Values",
+    color = "State"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ValuesSt <- ggplot(total_val_per_year_state, aes(x = landed_year, y = total_Val, group = dealer_state, color = dealer_state)) +
+  geom_line(size=1) +
+  scale_color_manual(values = c("blue", "red", "green", "orange", "purple")) +  # Add as many colors as needed
+  labs(
+    title = "Total Values per State Over Time",
+    x = "Year",
+    y = "Total Values",
+    color = "State"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Shrimp/Values_State.png", plot = ValuesSt, width = 10, height = 6, dpi = 300)
+
+
+```
+
+
+
+```{r}
+
+summary(dealers_per_year_state)  # Check for NA or missing values
+
+# Basic plot without facets
+ggplot(dealers_per_year_state, aes(x = landed_year, y = number_of_dealers)) +
+  geom_line()
+
+
+# Faceted plot of dealer counts per state per year
+ggplot(dealers_per_year_state, aes(x = landed_year, y = number_of_dealers)) +
+  geom_line() +
+  facet_wrap(~ dealer_state, scales = "free_y", ncol = 3) +  # Adjust 'ncol' as needed
+  labs(
+    title = "Annual Dealer Counts by State",
+    x = "Year",
+    y = "Dealer Count"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+Trends: 
+```{r}
+# Faceted plot of dealer counts per state per year with trend lines
+Nb_dealers <- ggplot(dealers_per_year_state, aes(x = landed_year, y = number_of_dealers)) +
+  geom_line() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +  # Adds a linear trend line
+  facet_wrap(~ dealer_state, scales = "free_y", ncol = 3) +  # Adjust 'ncol' as needed
+  labs(
+    title = "Annual Dealer Counts by State with Trend Lines",
+    x = "Year",
+    y = "Dealer Count"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Shrimp/Nb_dealers_state.png", plot = Nb_dealers, width = 10, height = 6, dpi = 300)
+
+ggplot(dealers_per_year_state, aes(x = landed_year, y = number_of_dealers)) +
+  geom_line() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +  # Adds a linear trend line
+  facet_wrap(~ dealer_state, scales = "free_y", ncol = 3) +  # Adjust 'ncol' as needed
+  labs(
+    title = "Annual Dealer Counts by State with Trend Lines",
+    x = "Year",
+    y = "Dealer Count"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+Filter the Data Based on State and Year
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Custom start years for each state
+start_years <- data.frame(dealer_state = c("LA", "MS", "TX", "FL", "AL"),
+                          start_year = c(2000, 2000, 2000, 2000, 2001))
+
+# Join the start years with your data and filter
+dealers_per_year_state_filtered <- dealers_per_year_state %>%
+  inner_join(start_years, by = "dealer_state") %>%
+  filter(landed_year >= start_year)
+
+
+```
+
+
+
+
+```{r}
+# Faceted plot of dealer counts per state per year with trend lines
+TR_Ticket2000 <- ggplot(dealers_per_year_state_filtered, aes(x = landed_year, y = number_of_dealers)) +
+  geom_line() +
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +  # Adds a linear trend line
+  facet_wrap(~ dealer_state, scales = "free_y", ncol = 3) +  # Adjust 'ncol' as needed
+  labs(
+    title = "Annual Dealer Counts by State with Trend Lines (From Specified Start Years)",
+    x = "Year",
+    y = "Dealer Count"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(dealers_per_year_state_filtered, aes(x = landed_year, y = number_of_dealers)) +
+  geom_line() +
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +  # Adds a linear trend line
+  facet_wrap(~ dealer_state, scales = "free_y", ncol = 3) +  # Adjust 'ncol' as needed
+  labs(
+    title = "Annual Dealer Counts by State with Trend Lines (From Specified Start Years)",
+    x = "Year",
+    y = "Dealer Count"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Shrimp/Trip_ticket_dealers2000.png", plot = TR_Ticket2000, width = 10, height = 6, dpi = 300)
+
+```
+
+```{r}
+Dealer_NonLinear <- ggplot(dealers_per_year_state_filtered, aes(x = landed_year, y = number_of_dealers)) +
+  geom_line() +
+  geom_smooth(method = "loess", se = TRUE, color = "blue") +  # Non-linear smoothing
+  facet_wrap(~ dealer_state, scales = "free_y", ncol = 3) +
+  labs(
+    title = "Annual Dealer Counts by State with Non-Linear Trend Lines",
+    x = "Year",
+    y = "Dealer Count"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Shrimp/Trip_ticket_dealers2000_NonLinear.png", plot = Dealer_NonLinear, width = 10, height = 6, dpi = 300)
+
+```
+
+
+
+
+Community Analysis
+
+```{r}
+#| warning: false
+Cameron_City <- Cameron_P%>% filter(Cameron_P$dealer_city=="CAMERON")
+Cam_City <-Cameron_City[Cameron_City$common_name %in% SpeciesLA,]
+
+ggplot(Cam_City,aes(x=landed_year, y=value))+
+      stat_summary(geom="bar", fun="mean", na.rm = T, aes(fill=common_name))+
+  theme(axis.text.x = element_text(angle=90))
+
+ggplot(Cam_City,aes(x=landed_year, y=value))+
+  facet_wrap(~common_name)+
+   geom_smooth()+
+    stat_summary(geom="bar", fun="mean", na.rm = T, aes(fill=common_name))+
+  labs(
+    title = "Cameron City Landed Species",
+    subtitle = "Most Valuable Commercial Fish Species for Louisiana",
+    x = "Year", y = "Annual Value")+
+  theme(axis.text.x = element_text(angle=90))
+```
+
+
+
+```{r}
+community<-unique(ShrimpData$dealer_city)
+order(community)
+list(community)
+community[str_detect(community, regex("BILOXI", ignore_case = T))]
+community[str_detect(community, regex("BAYOU LA BATRE", ignore_case = T))]
+community[str_detect(community, regex("SEADRIFT", ignore_case = T))]
+
+
+```
+
+```{r}
+EEJ_com <- ShrimpAll %>% filter(ShrimpAll$dealer_city=="BILOXI"| ShrimpAll$dealer_city=="BAYOU LA BATRE"| ShrimpAll$dealer_city=="SEADRIFT"| ShrimpAll$dealer_city=="CAMERON"| ShrimpAll$dealer_city=="DULAC"| ShrimpAll$dealer_city=="KEMAH"| ShrimpAll$dealer_city=="HOUMA"| ShrimpAll$dealer_city=="BROWNSVILLE"| ShrimpAll$dealer_city=="GRETNA")
+
+
+ggplot(EEJ_com,aes(x=landed_year, y=Adjusted_Val))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Shrimp Species for EEJ communities",
+    subtitle = "Values",
+    x = "Year", y = "Annual Value", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+ggsave( "Cameron.jpg", plot = last_plot(),  path = "~/Resilience/")
+
+
+# Step 1: Aggregate the data
+total_lbs_per_year_community <- EEJ_com %>%
+  group_by(landed_year, dealer_city) %>%
+  summarise(total_live_lbs = sum(live_lbs, na.rm = TRUE)) # Summing live lbs per year per state
+
+# Step 2: Create the plot
+
+library(ggplot2)
+
+ ggplot(total_lbs_per_year_community, aes(x = landed_year, y = total_live_lbs, color = dealer_city)) +
+  geom_line() + # or geom_bar(stat = "identity") for a bar plot
+  facet_wrap(~ dealer_city, scales = "free_y") + # Facet by dealer_city
+  labs(
+    title = "Total Landed Pounds of Fish per Community Over Time",
+    x = "Year",
+    y = "Total Landed Pounds",
+    color = "Community"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+
+#ggsave( "Cameron.jpg", plot = last_plot(),  path = "~/Resilience/")
+
+
+
+```
+Adjusted Value and Lbs aggregated
+
+
+```{r}
+# Assuming you have a column "Adjusted_Val" in EEJ_com
+total_lbs_val_per_year_community <- EEJ_com %>%
+  group_by(landed_year, dealer_city) %>%
+  summarise(
+    total_live_lbs = sum(live_lbs, na.rm = TRUE),
+    total_adjusted_val = sum(Adjusted_Val, na.rm = TRUE)
+  ) %>%
+  gather(key = "metric", value = "value", -landed_year, -dealer_city)
+
+```
+
+```{r}
+EEJcom <- ggplot(total_lbs_val_per_year_community, aes(x = landed_year, y = value, color = dealer_city)) +
+  geom_line(aes(linetype = metric)) + # Different line types for each metric
+  facet_wrap(~ dealer_city, scales = "free_y") +
+  labs(
+    title = "Total Landed Pounds of Fish and Adjusted Values per Community Over Time",
+    x = "Year",
+    y = "Value",
+    color = "Community"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_linetype_manual(values = c("solid", "dashed")) # Set line types
+
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Shrimp/PoundsvalueShrimp.png", plot = EEJcom, width = 10, height = 6, dpi = 300)
+
+library(ggplot2)
+
+ggplot(total_lbs_val_per_year_community, aes(x = landed_year, y = value, color = dealer_city)) +
+  geom_line(aes(linetype = metric)) + 
+  facet_wrap(~ dealer_city, scales = "free_y", ncol = 1) + # Adjust ncol for layout
+  labs(
+    title = "Total Landed Pounds of Fish and Adjusted Values per Community Over Time",
+    x = "Year",
+    y = "Value",
+    color = "Community"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 7), # Rotate and adjust font size
+    strip.text.x = element_text(size = 8) # Adjust facet label size if needed
+  ) +
+  scale_linetype_manual(values = c("solid", "dashed"))
+
+
+library(ggplot2)
+
+ggplot(total_lbs_val_per_year_community, aes(x = landed_year, y = value, color = dealer_city)) +
+  geom_line(aes(linetype = metric)) +
+  facet_wrap(~ dealer_city, scales = "free_y") +
+  labs(
+    title = "Total Landed Pounds of Fish and Adjusted Values per Community Over Time",
+    x = "Year",
+    y = "Landed Pounds & Values"
+  ) +
+  scale_x_continuous(breaks = unique(total_lbs_val_per_year_community$landed_year)) + # Ensure all years are shown
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), # Adjust for better readability
+    legend.position = "none" # Remove the legend
+  )
+
+
+
+```
+What are the traditional dealers in each community
+
+identify traditional shrimp dealers in a community like Bayou La Batre, based on their history of consistently buying large quantities of fish
+
+Step 1: Filter Data for the Specific Community
+Start by filtering your dataset to include only records from Bayou La Batre.
+```{r}
+bayou_data <- ShrimpAll %>% 
+  filter(dealer_city == "BAYOU LA BATRE")
+
+```
+
+Step 2: Aggregate Dealer Data Over the Years
+Summarize the data to find the total weight and value of shrimp bought by each dealer over the years. This step helps in identifying dealers who have been consistently active.
+
+
+```{r}
+dealer_summary <- bayou_data %>%
+  group_by(corporate_name) %>%
+  summarise(
+    total_weight = sum(live_lbs, na.rm = TRUE), 
+    total_value = sum(Adjusted_Val, na.rm = TRUE),
+    years_active = n_distinct(landed_year)
+  ) %>% 
+  arrange(desc(total_weight), desc(total_value))
+
+```
+
+Step 3: Criteria for Traditional Dealers
+Define what you consider a "traditional dealer". This could be based on a combination of factors such as:
+
+Total weight or value of shrimp purchased
+Number of years active
+Consistency over the years (you might need to look at year-over-year data for this)
+
+```{r}
+traditional_dealers <- dealer_summary %>%
+  filter(years_active >= 30)
+
+```
+
+Step 4: Analyze the Trends Over the Years
+For a more detailed analysis, especially regarding consistency, examine the purchase trends of these dealers over the years. This step might involve plotting their purchase history.
+
+```{r}
+bayou_data %>%
+  filter(corporate_name %in% traditional_dealers$corporate_name) %>%
+  group_by(landed_year, corporate_name) %>%
+  summarise(yearly_weight = sum(live_lbs, na.rm = TRUE)) %>%
+  ggplot(aes(x = landed_year, y = yearly_weight, color = corporate_name)) +
+  geom_line() +
+  labs(title = "Yearly Purchase Trends of Traditional Dealers in Bayou La Batre")
+
+bayou_data %>%
+  filter(corporate_name %in% traditional_dealers$corporate_name) %>%
+  group_by(landed_year, corporate_name) %>%
+  summarise(yearly_weight = sum(live_lbs, na.rm = TRUE)) %>%
+  ggplot(aes(x = landed_year, y = yearly_weight, color = corporate_name)) +
+  geom_line() +
+  labs(title = "Yearly Purchase Trends of Traditional Dealers in Bayou La Batre")
+
+```
+
+##Dulac dealers
+
+
+```{r}
+dulac_data <- ShrimpAll %>% 
+  filter(dealer_city == "DULAC")
+
+```
+
+Step 2: Aggregate Dealer Data Over the Years
+Summarize the data to find the total weight and value of shrimp bought by each dealer over the years. This step helps in identifying dealers who have been consistently active.
+
+
+```{r}
+dealer_summary <- dulac_data %>%
+  group_by(corporate_name) %>%
+  summarise(
+    total_weight = sum(live_lbs, na.rm = TRUE), 
+    total_value = sum(Adjusted_Val, na.rm = TRUE),
+    years_active = n_distinct(landed_year)
+  ) %>% 
+  arrange(desc(total_weight), desc(total_value))
+
+```
+
+Step 3: Criteria for Traditional Dealers
+Define what you consider a "traditional dealer". This could be based on a combination of factors such as:
+
+Total weight or value of shrimp purchased
+Number of years active
+Consistency over the years (you might need to look at year-over-year data for this)
+
+```{r}
+traditional_dealers_D <- dealer_summary %>%
+  filter(years_active >= 30)
+
+```
+
+Step 4: Analyze the Trends Over the Years
+For a more detailed analysis, especially regarding consistency, examine the purchase trends of these dealers over the years. This step might involve plotting their purchase history.
+
+```{r}
+dulac_data %>%
+  filter(corporate_name %in% traditional_dealers_D$corporate_name) %>%
+  group_by(landed_year, corporate_name) %>%
+  summarise(yearly_weight = sum(live_lbs, na.rm = TRUE)) %>%
+  ggplot(aes(x = landed_year, y = yearly_weight, color = corporate_name)) +
+  geom_line() +
+  labs(title = "Yearly Purchase Trends of Traditional Dealers in Dulac")
+
+dulac_data %>%
+  filter(corporate_name %in% traditional_dealers_D$corporate_name) %>%
+  group_by(landed_year, corporate_name) %>%
+  summarise(yearly_weight = sum(live_lbs, na.rm = TRUE)) %>%
+  ggplot(aes(x = landed_year, y = yearly_weight, color = corporate_name)) +
+  geom_line() +
+  labs(title = "Yearly Purchase Trends of Traditional Dealers in Dulac")
+
+
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Shrimp/Trip_ticket_dealers2000_NonLinear.png", plot = Dealer_NonLinear, width = 10, height = 6, dpi = 300)
+
+```
+
+
+Values
+
+Step 2: Aggregate Dealer Data Over the Years
+Summarize the data to find the total weight and value of shrimp bought by each dealer over the years. This step helps in identifying dealers who have been consistently active.
+
+
+```{r}
+dealer_summary_V <- dulac_data %>%
+  group_by(corporate_name) %>%
+  summarise(
+    total_weight = sum(live_lbs, na.rm = TRUE), 
+    total_value = sum(Adjusted_Val, na.rm = TRUE),
+    years_active = n_distinct(landed_year)
+  ) %>% 
+  arrange(desc(total_weight), desc(total_value))
+
+```
+
+
+
+Step 4: Analyze the Trends Over the Years
+For a more detailed analysis, especially regarding consistency, examine the purchase trends of these dealers over the years. This step might involve plotting their purchase history.
+
+```{r}
+Dulac_deal <- dulac_data %>%
+  filter(corporate_name %in% traditional_dealers_D$corporate_name) %>%
+  group_by(landed_year, corporate_name) %>%
+  summarise(yearly_val = sum(Adjusted_Val, na.rm = TRUE)) %>%
+  ggplot(aes(x = landed_year, y = yearly_val, color = corporate_name)) +
+  geom_line() +
+  labs(title = "Yearly Purchase Trends by Values of Traditional Dealers in Dulac")
+
+
+```
+
+No legend
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+Dulac_deal <- dulac_data %>%
+  filter(corporate_name %in% traditional_dealers_D$corporate_name) %>%
+  group_by(landed_year, corporate_name) %>%
+  summarise(yearly_val = sum(Adjusted_Val, na.rm = TRUE)) %>%
+  ggplot(aes(x = landed_year, y = yearly_val, color = corporate_name)) +
+  geom_line() +
+  labs(title = "Yearly Purchase Trends by Values of Traditional Dealers in Dulac") +
+  theme(legend.position = "none")  # This will hide the legend
+
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Shrimp/Dulac Traditional Dealers.png", plot = Dulac_deal, width = 10, height = 6, dpi = 300)
+
+```
+
+
+
+
+
+
+Create a datafile - showing the traditional dealers
+
+
+```{r}
+active_years_BLB <- bayou_data %>%
+  group_by(corporate_name) %>%
+  summarise(active_years = paste(unique(landed_year), collapse = ", ")) %>%
+  ungroup()
+
+dealer_summary <- dealer_summary %>%
+  left_join(years_active, by = "corporate_name")
+# Step 1: Aggregate Dealer Data Over the Years
+dealer_summary <- bayou_data %>%
+  group_by(corporate_name) %>%
+  summarise(
+    total_weight = sum(live_lbs, na.rm = TRUE), 
+    total_value = sum(Adjusted_Val, na.rm = TRUE),
+    years_active = n_distinct(landed_year)
+  ) %>% 
+  arrange(desc(total_weight), desc(total_value))
+
+# Step 2: Create a List of Active Years for Each Dealer
+active_years_BLB <- bayou_data %>%
+  group_by(corporate_name) %>%
+  summarise(active_years = paste(unique(landed_year), collapse = ", ")) %>%
+  ungroup()
+
+# Step 3: Join This with the dealer_summary Table
+dealer_summary_BLB <- dealer_summary %>%
+  left_join(years_active, by = "corporate_name")
+
+write.csv(dealer_summary_BLB, "dealer_summary.csv", row.names = FALSE)
+
+```
+
+
+```{r}
+EEJ_com_LA <- ShrimpAll %>% filter(ShrimpAll$dealer_city=="CAMERON"| ShrimpAll$dealer_city=="DULAC"|  ShrimpAll$dealer_city=="HOUMA"|ShrimpAll$dealer_city=="GRETNA")
+
+
+ggplot(EEJ_com_LA,aes(x=landed_year, y=Adjusted_Val))+
+  facet_wrap(~dealer_city)+
+  stat_summary(aes(fill=common_name), geom="bar", fun="mean", na.rm = T, position=position_stack())+
+    labs(
+    title = "Fishing Trends for Shrimp Species for EEJ_LA communities",
+    subtitle = "Values",
+    x = "Year", y = "Annual Value", 
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+  theme(axis.text.x = element_text(angle=90))
+
+
+```
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+# Aggregating data for the whole state of Louisiana by year
+LouisianaData <- ShrimpAll %>%
+  filter(dealer_state == "LA") %>%
+  group_by(landed_year) %>%
+  summarise(
+    total_live_lbs = sum(live_lbs, na.rm = TRUE),
+    total_adjusted_val = sum(Adjusted_Val, na.rm = TRUE)
+  )
+
+# Print out a snippet of the LouisianaData to inspect the aggregated results
+print(head(LouisianaData))
+
+```
+Pounds only
+```{r}
+# Plotting the community data with state-level trends for landed pounds
+p <- ggplot(EEJ_com_LA, aes(x = landed_year, y = live_lbs)) +
+  facet_wrap(~dealer_city) +
+  stat_summary(aes(fill = common_name), geom = "bar", fun = "mean", na.rm = TRUE, position = position_stack()) +
+  geom_line(data = LouisianaData, aes(x = landed_year, y = total_live_lbs, group = 1), color = "blue", size = 1.5) +
+  labs(
+    title = "Fishing Trends for Shrimp in Louisiana",
+    subtitle = "Total Landed Pounds in Louisiana by Community and State",
+    x = "Year", y = "Landed Pounds", 
+    fill = "Species"
+  ) +
+  theme(axis.text.x = element_text(angle = 90))
+
+# Print the plot
+print(p)
+
+
+```
+Calculate as percentages
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Aggregate total landed pounds for the whole state of Louisiana by year
+LouisianaData_Lbs <- ShrimpAll %>%
+  filter(dealer_state == "LA") %>%
+  group_by(landed_year) %>%
+  summarise(
+    state_total_live_lbs = sum(live_lbs, na.rm = TRUE)
+  )
+
+# Join this state data back to the city-specific data and calculate percentages
+EEJ_com_LA <- ShrimpAll %>%
+  filter(dealer_city %in% c("CAMERON", "DULAC", "HOUMA", "GRETNA")) %>%
+  group_by(landed_year, dealer_city) %>%
+  summarise(
+    city_live_lbs = sum(live_lbs, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  left_join(LouisianaData_Lbs, by = "landed_year") %>%
+  mutate(
+    percentage = (city_live_lbs / state_total_live_lbs) * 100
+  )
+
+# Print some of this data to verify calculations
+print(head(EEJ_com_LA))
+
+# Plotting the percentage data
+p <- ggplot(EEJ_com_LA, aes(x = landed_year, y = percentage, group = dealer_city, fill = dealer_city)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Percentage of Total Landed Shrimp Pounds by Community in Louisiana",
+    subtitle = "As a Percentage of State Total",
+    x = "Year", y = "Percentage of State's Total Landed Pounds"
+  ) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_brewer(palette = "Set1")
+
+# Print the plot
+print(p)
+
+```
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Assuming EEJ_com_LA and LouisianaData_Lbs have already been defined and calculated as earlier
+
+
+
+Dulac <- ShrimpAll %>% filter(dealer_city =="DULAC")
+
+#Aggregate landings by year
+
+Dulac_agg <- Dulac %>%
+  group_by(landed_year) %>%
+  summarise(
+    total_live_lbs = sum(live_lbs, na.rm = TRUE),
+    .groups = 'drop'  # Drop grouping for further operations
+  )
+
+
+# Aggregate landings by year for the entire state
+state_aggregated <- ShrimpAll %>%
+  filter(dealer_state == "LA") %>%
+  group_by(landed_year) %>%
+  summarise(
+    state_total_live_lbs = sum(live_lbs, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+# For each city
+Dulac_perc_change <- Dulac_agg %>%
+  arrange(landed_year) %>%
+  mutate(
+    annual_change = (total_live_lbs - lag(total_live_lbs)) / lag(total_live_lbs) * 100
+  ) %>%
+  ungroup()
+
+# For the state
+state_percentage_changes <- state_aggregated %>%
+  arrange(landed_year) %>%
+  mutate(
+    state_annual_change = (state_total_live_lbs - lag(state_total_live_lbs)) / lag(state_total_live_lbs) * 100
+  ) %>%
+  ungroup()
+
+
+
+
+
+```
+
+
+
+
+```{r}
+# Merging state data with Dulac's data for comparison
+comparison_plot_data <- Dulac_perc_change %>%
+  select(landed_year, annual_change) %>%
+  rename(dulac_change = annual_change) %>%
+  left_join(state_percentage_changes %>% select(landed_year, state_annual_change), by = "landed_year")
+
+# Plotting
+p <- ggplot(comparison_plot_data, aes(x = landed_year)) +
+  geom_line(aes(y = dulac_change, group = 1, colour = "Dulac Change"), size = 1) +
+  geom_line(aes(y = state_annual_change, group = 1, colour = "State Change"), size = 1) +
+  labs(
+    title = "Annual Percentage Change in Shrimp Landings: Dulac vs Louisiana",
+    subtitle = "Comparing Year-on-Year Changes",
+    x = "Year", y = "Annual Percentage Change"
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Dulac Change" = "blue", "State Change" = "red")) +
+  theme(axis.text.x = element_text(angle = 90))
+
+# Print the plot
+print(p)
+
+```
+
+Identify divergent years
+1. calculate divergence
+
+```{r}
+# Calculate the divergence between Dulac and the state
+comparison_plot_data <- comparison_plot_data %>%
+  mutate(
+    divergence = abs(dulac_change - state_annual_change),  # Absolute difference
+    significant_divergence = ifelse(divergence > 30, TRUE, FALSE)  # Mark significant divergences
+  )
+
+```
+
+Step 2: Highlight Significant Divergences on the Plot
+You can now modify your plotting code to add points or annotations for years where the divergence is significant:
+
+```{r}
+library(ggplot2)
+library(ggplot2)
+
+# Plotting with year annotations for significant divergences
+p <- ggplot(comparison_plot_data, aes(x = landed_year)) +
+  geom_line(aes(y = dulac_change, group = 1, colour = "Dulac Change"), size = 1) +
+  geom_line(aes(y = state_annual_change, group = 1, colour = "State Change"), size = 1) +
+  geom_point(data = filter(comparison_plot_data, significant_divergence == TRUE), 
+             aes(y = dulac_change), size = 3, shape = 21, fill = "yellow") +
+  geom_point(data = filter(comparison_plot_data, significant_divergence == TRUE), 
+             aes(y = state_annual_change), size = 3, shape = 21, fill = "yellow") +
+  geom_text(data = filter(comparison_plot_data, significant_divergence == TRUE),
+            aes(label = landed_year, y = max(dulac_change, state_annual_change) + 5),  # Adjust y position as needed
+            hjust = 0.5, vjust = 0, color = "darkgreen", size = 3.5, fontface = "bold") +
+  labs(
+    title = "Annual Percentage Change in Shrimp Landings: Dulac vs Louisiana",
+    subtitle = "Comparing Year-on-Year Changes, Highlighting Significant Divergences",
+    x = "Year", y = "Annual Percentage Change"
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Dulac Change" = "blue", "State Change" = "red")) +
+  theme(axis.text.x = element_text(angle = 90))
+
+# Print the plot
+print(p)
+
+
+```
+
+
+
+```{r}
+# Checking for missing data
+print(summarise(percentage_changes, any(is.na(annual_change))))
+print(summarise(state_percentage_changes, any(is.na(state_annual_change))))
+
+# Option to handle missing data by filling in NAs if that makes sense contextually
+# For example, you might decide to set initial missing percentage changes to 0 (no change from non-existing previous year)
+state_percentage_changes <- state_percentage_changes %>%
+  mutate(state_annual_change = ifelse(is.na(state_annual_change), 0, state_annual_change))
+
+```
+
+
+##Changes in Values
+
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+
+#Aggregate landings by year
+
+Dulac_agg_V <- Dulac %>%
+  group_by(landed_year) %>%
+  summarise(
+    total_values = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'  # Drop grouping for further operations
+  )
+
+
+# Aggregate landings by year for the entire state
+state_aggregated_V <- ShrimpAll %>%
+  filter(dealer_state == "LA") %>%
+  group_by(landed_year) %>%
+  summarise(
+    state_total_Val = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+# For each city calculate percentage change
+Dulac_perc_change_V <- Dulac_agg_V %>%
+  arrange(landed_year) %>%
+  mutate(
+    annual_change = (total_values - lag(total_values)) / lag(total_values) * 100
+  ) %>%
+  ungroup()
+
+# For the state
+state_percentage_changes_V <- state_aggregated_V %>%
+  arrange(landed_year) %>%
+  mutate(
+    state_annual_change = (state_total_Val - lag(state_total_Val)) / lag(state_total_Val) * 100
+  ) %>%
+  ungroup()
+
+
+
+
+
+```
+
+
+
+
+```{r}
+# Merging state data with Dulac's data for comparison
+comparison_plot_data_V <- Dulac_perc_change_V %>%
+  select(landed_year, annual_change) %>%
+  rename(dulac_change = annual_change) %>%
+  left_join(state_percentage_changes %>% select(landed_year, state_annual_change), by = "landed_year")
+
+# Plotting
+p <- ggplot(comparison_plot_data_V, aes(x = landed_year)) +
+  geom_line(aes(y = dulac_change, group = 1, colour = "Dulac Change"), size = 1) +
+  geom_line(aes(y = state_annual_change, group = 1, colour = "State Change"), size = 1) +
+  labs(
+    title = "Annual Percentage Change in Shrimp Landings: Dulac vs Louisiana",
+    subtitle = "Comparing Year-on-Year Changes",
+    x = "Year", y = "Annual Percentage Change"
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Dulac Change" = "blue", "State Change" = "red")) +
+  theme(axis.text.x = element_text(angle = 90))
+
+# Print the plot
+print(p)
+
+```
+
+
+
+
+Identify divergent years for VALUES
+1. calculate divergence
+
+```{r}
+# Calculate the divergence between Dulac and the state
+comparison_plot_data_V <- comparison_plot_data_V %>%
+  mutate(
+    divergence = abs(dulac_change - state_annual_change),  # Absolute difference
+    significant_divergence = ifelse(divergence > 30, TRUE, FALSE)  # Mark significant divergences
+  )
+
+```
+
+Step 2: Highlight Significant Divergences on the Plot
+You can now modify your plotting code to add points or annotations for years where the divergence is significant:
+
+```{r}
+library(ggplot2)
+library(ggplot2)
+
+# Plotting with year annotations for significant divergences
+p_V <- ggplot(comparison_plot_data_V, aes(x = landed_year)) +
+  geom_line(aes(y = dulac_change, group = 1, colour = "Dulac Change"), size = 1) +
+  geom_line(aes(y = state_annual_change, group = 1, colour = "State Change"), size = 1) +
+  geom_point(data = filter(comparison_plot_data, significant_divergence == TRUE), 
+             aes(y = dulac_change), size = 3, shape = 21, fill = "yellow") +
+  geom_point(data = filter(comparison_plot_data, significant_divergence == TRUE), 
+             aes(y = state_annual_change), size = 3, shape = 21, fill = "yellow") +
+  geom_text(data = filter(comparison_plot_data_V, significant_divergence == TRUE),
+            aes(label = landed_year, y = max(dulac_change, state_annual_change) + 5),  # Adjust y position as needed
+            hjust = 0.5, vjust = 0, color = "darkgreen", size = 3.5, fontface = "bold") +
+  labs(
+    title = "Annual Percentage Change in Shrimp Landing Values: Dulac vs Louisiana",
+    subtitle = "Comparing Year-on-Year Changes, Highlighting Significant Divergences",
+    x = "Year", y = "Annual Percentage Change - Divergence greater than 30 percent"
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Dulac Change" = "blue", "State Change" = "red")) +
+  theme(axis.text.x = element_text(angle = 90))
+
+# Print the plot
+print(p_V)
+
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Shrimp/Divergence_values.png", plot = p_V, width = 10, height = 6, dpi = 300)
+
+```
+
+
+
+Better visualistion
+```{r}
+library(ggplot2)
+
+p_V <- ggplot(comparison_plot_data, aes(x = landed_year)) +
+  geom_line(aes(y = dulac_change, group = 1, colour = "Dulac Change"), size = 1) +
+  geom_line(aes(y = state_annual_change, group = 1, colour = "State Change"), size = 1) +
+  geom_point(data = filter(comparison_plot_data, significant_divergence == TRUE), 
+             aes(y = dulac_change, group = 1), size = 3, shape = 21, fill = "yellow") +
+  geom_point(data = filter(comparison_plot_data, significant_divergence == TRUE), 
+             aes(y = state_annual_change + 3, group = 1), size = 3, shape = 21, fill = "red") + # small vertical offset
+  geom_text(data = filter(comparison_plot_data, significant_divergence == TRUE),
+            aes(label = landed_year, y = max(dulac_change, state_annual_change) + 5),
+            hjust = 0.5, vjust = 0, color = "darkgreen", size = 3.5, fontface = "bold") +
+  labs(
+    title = "Annual Percentage Change in Shrimp Landing Values: Dulac vs Louisiana",
+    subtitle = "Comparing Year-on-Year Changes, Highlighting Significant Divergences",
+    x = "Year", y = "Annual Percentage Change"
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Dulac Change" = "blue", "State Change" = "red")) +
+  theme(axis.text.x = element_text(angle = 90))
+
+# Print the plot
+print(p_V)
+
+ggsave("Divergence_values.png", plot = p_V, width = 10, height = 6, dpi = 300)
+
+```
+
+
+
