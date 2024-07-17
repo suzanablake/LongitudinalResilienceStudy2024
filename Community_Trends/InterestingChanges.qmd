@@ -8,6 +8,9 @@ format: html
 ```{r setup, include=FALSE}
 
 Species10 <- readRDS("~/Resilience/GitReady/UpdatedData/top_10_data.rds")
+
+
+options(scipen = 999) # takes away the scientific notation 
 ```
 
 ## Data Clean
@@ -26,6 +29,13 @@ Species10 <- Species10 %>%
 # Step 2: Filter for values greater than 1 in Adjusted_Val
 Species10 <- Species10 %>%
   filter(Adjusted_Val > 5000 & !is.na(Adjusted_Val))
+
+# Identify the rows where dealer_city is "EUNICE"
+rows_to_fill <- Species10$dealer_city == "EUNICE"
+
+# Fill in dealer_county with "ST. LANDRY" for the identified rows
+Species10$dealer_county[rows_to_fill] <- "ST. LANDRY"
+print(Species10[Species10$dealer_city == "EUNICE", c("dealer_city", "dealer_county")])
 
 
 ```
@@ -64,20 +74,10 @@ Bay_Louis_plot <- ggplot(bay_st_louis, aes(x = landed_year)) +
   scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
   theme_minimal()
 
-ggplot(bay_st_louis, aes(x = landed_year)) +
-  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
-  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
-  labs(title = "Trends for Bay Saint Louis, Mississippi",
-       x = "Year",
-       y = "Landed Pounds",
-       color = "Legend") +
-  scale_y_continuous(name = "Landed Pounds", sec.axis = sec_axis(~., name = "Landed Values")) +
-  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
-  theme_minimal()
 
 # Save the plot as an image (PNG format by default)
-ggsave("~/Resilience/GitReady/Community_Trends/BayStLouisTrends.png", plot = Bay_Louis_plot, width = 14, height = 6, units = "in")
- print(Bay_Louis_plot)
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/BayStLouisTrends.png", plot = Bay_Louis_plot, width = 14, height = 6, units = "in")
+print(Bay_Louis_plot)
 
 
 ```
@@ -103,7 +103,7 @@ Bay_species_Val <- ggplot(bay_st_louis, aes(x = common_name_cleaned, y = Adjuste
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # Save the plot as an image (PNG format by default)
-ggsave("~/Resilience/GitReady/Community_Trends/BaySpeciesContribution_Val.png", plot = Bay_species_Val, width = 14, height = 6, units = "in")
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/BaySpeciesContribution_Val.png", plot = Bay_species_Val, width = 14, height = 6, units = "in")
  print(Bay_species_Val)
 
 
@@ -124,28 +124,277 @@ Bay_BrShrimp_plot <- ggplot(bay_BrownShrimp, aes(x = landed_year)) +
   scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
   theme_minimal()
 
+
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/BayStLouisTrends_BrownShrimp.png", plot = Bay_BrShrimp_plot, width = 14, height = 6, units = "in")
 print(Bay_BrShrimp_plot)
 
-ggplot(bay_st_louis, aes(x = landed_year)) +
+
+```
+### CV results: EUNICE LA
+
+```{r}
+# Filter data for Bay Saint Louis in Mississippi
+LA <- subset(Species10, dealer_state == "LA")
+# Select unique values from the 'dealer_city' column
+unique_cities <- unique(LA$dealer_city)
+
+# Print the unique cities
+print(unique_cities)
+
+Eunice <- subset(LA, dealer_city == "EUNICE")
+
+# Identify the rows where dealer_city is "EUNICE"
+rows_to_replace <- Eunice$dealer_city == "EUNICE"
+
+# Replace dealer_county with "ST. LANDRY" or "ACADIA" for the identified rows
+Eunice$county_name[rows_to_replace] <- c("ST. LANDRY/ACADIA")
+print(Eunice)
+```
+
+
+```{r}
+library(ggplot2)
+
+# Plotting trends for landed pounds and values over the years
+Eunice_plot <- ggplot(Eunice, aes(x = landed_year)) +
   geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
   geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
-  labs(title = "Trends for Bay Saint Louis, Mississippi",
+  labs(title = "Trends for Eunice, LA",
        x = "Year",
-       y = "Landed Pounds",
+       y = "Landed Pounds and Values",
        color = "Legend") +
-  scale_y_continuous(name = "Landed Pounds", sec.axis = sec_axis(~., name = "Landed Values")) +
   scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
+  theme_minimal()
+print(Eunice_plot)
+
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/Eunice.png", plot = Eunice_plot, width = 14, height = 6, units = "in")
+
+
+```
+
+```{r}
+# Filter data for Bay Saint Louis in Mississippi
+AL <- subset(Species10, dealer_state == "AL")
+# Select unique values from the 'dealer_city' column
+unique_cities <- unique(AL$dealer_city)
+
+# Print the unique cities
+print(unique_cities)
+
+Mobile <- subset(AL, dealer_city == "MOBILE")
+
+print(Mobile)
+
+#Plotting trends for landed pounds and values over the years
+Mobile_plot <- ggplot(Mobile, aes(x = landed_year)) +
+  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
+  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
+  labs(title = "Trends for Mobile, AL",
+       x = "Year",
+       y = "Landed Pounds and Values",
+       color = "Legend") +
+  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
+  theme_minimal()
+print(Mobile_plot)
+
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/Mobile.png", plot = Mobile_plot, width = 14, height = 6, units = "in")
+
+```
+
+
+Coden, AL
+
+```{r}
+```
+
+
+```{r}
+Coden <- subset(AL, dealer_city == "CODEN")
+
+print(Coden)
+
+#Plotting trends for landed pounds and values over the years
+Coden_plot <- ggplot(Coden, aes(x = landed_year)) +
+  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
+  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
+  labs(title = "Trends for Coden, AL",
+       x = "Year",
+       y = "Landed Pounds and Values",
+       color = "Legend") +
+  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
+  theme_minimal()
+print(Coden_plot)
+
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/Coden.png", plot = Coden_plot, width = 14, height = 6, units = "in")
+```
+
+
+```{r}
+BB <- subset(AL, dealer_city == "BAYOU LA BATRE")
+
+print(BB)
+
+#Plotting trends for landed pounds and values over the years
+BB_plot <- ggplot(BB, aes(x = landed_year)) +
+  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
+  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
+  labs(title = "Trends for Bayou LA Batre",
+       x = "Year",
+       y = "Landed Pounds and Values",
+       color = "Legend") +
+  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
+  theme_minimal()
+print(BB_plot)
+
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/BB.png", plot = BB_plot, width = 14, height = 6, units = "in")
+
+
+```
+Bayou la Batre
+
+
+
+
+
+
+
+
+```{r}
+# Filter data for Bay Saint Louis in Mississippi
+TX <- subset(Species10, dealer_state == "TX")
+# Select unique values from the 'dealer_city' column
+unique_cities <- unique(TX$dealer_city)
+
+# Print the unique cities
+print(unique_cities)
+
+Kemah <- subset(TX, dealer_city == "KEMAH")
+
+print(Kemah)
+
+#Plotting trends for landed pounds and values over the years
+Kemah_plot <- ggplot(Kemah, aes(x = landed_year)) +
+  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
+  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
+  labs(title = "Trends for Kemah, TX",
+       x = "Year",
+       y = "Landed Pounds and Values",
+       color = "Legend") +
+  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
+  theme_minimal()
+print(Kemah_plot)
+
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/Kemah.png", plot = Kemah_plot, width = 14, height = 6, units = "in")
+
+# Plotting the contribution of different species to landed pounds
+ggplot(Kemah, aes(x = common_name_cleaned, y = live_lbs)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(title = "Contribution of Different Species to Landed Pounds for Kemah",
+       x = "Species",
+       y = "Landed Pounds") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+Kemah_species_Val <- ggplot(Kemah, aes(x = common_name_cleaned, y = Adjusted_Val)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(title = "Contribution of Different Species for Kemah",
+       subtitle = "Landed Fish contribution to Total Value",
+       x = "Species",
+       y = "Value of Landed Pounds") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/Kemah_Val.png", plot = Kemah_species_Val, width = 14, height = 6, units = "in")
+print(Kemah_species_Val)
+
+```
+
+
+```{r}
+Freeport <- subset(TX, dealer_city == "FREEPORT")
+
+print(Freeport)
+
+#Plotting trends for landed pounds and values over the years
+Freeport_plot <- ggplot(Kemah, aes(x = landed_year)) +
+  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
+  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
+  labs(title = "Trends for Freeport, TX",
+       x = "Year",
+       y = "Landed Pounds and Values",
+       color = "Legend") +
+  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red")) +
+  theme_minimal()
+print(Freeport_plot)
+
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/Freeport_TX.png", plot = Freeport_plot, width = 14, height = 6, units = "in")
+
+# Plotting the contribution of different species to landed pounds
+ggplot(Freeport, aes(x = common_name_cleaned, y = live_lbs)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(title = "Contribution of Different Species to Landed Pounds for Freeport, TX",
+       x = "Species",
+       y = "Landed Pounds") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+Freeport_species_Val <- ggplot(Freeport, aes(x = common_name_cleaned, y = Adjusted_Val)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(title = "Contribution of Different Species for Freeport",
+       subtitle = "Landed Fish contribution to Total Value",
+       x = "Species",
+       y = "Value of Landed Pounds") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Save the plot as an image (PNG format by default)
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/Freeport_Val.png", plot = Kemah_species_Val, width = 14, height = 6, units = "in")
+print(Freeport_species_Val)
+
+```
+
+```{r}
+Freeport_BrownShrimp <- subset(Freeport, common_name_cleaned == "Brown Shrimp" | common_name_cleaned == "White Shrimp")
+head(Freeport_BrownShrimp)
+
+
+# Assuming variable types are appropriate and column names exist
+Freeport_BrShrimp_plot <- ggplot(Freeport_BrownShrimp, aes(x = landed_year)) +
+  geom_line(aes(y = live_lbs, color = "Landed Pounds"), size = 1) +
+  geom_line(aes(y = Adjusted_Val, color = "Landed Values"), size = 1) +
+  labs(title = "Trends for Freeport, TX - Brown Shrimp and White Shrimp",
+       x = "Year",
+       y = "Landed Pounds and Values",
+       color = "Legend") +
+  scale_color_manual(values = c("Landed Pounds" = "blue", "Landed Values" = "red"),
+                     name = "Legend") +  # Specify legend name
   theme_minimal()
 
 # Save the plot as an image (PNG format by default)
-ggsave("~/Resilience/GitReady/Community_Trends/BayStLouisTrends_BrownShrimp.png", plot = Bay_BrShrimp_plot, width = 14, height = 6, units = "in")
- print(Bay_BrShrimp_plot)
-
-
-```
-### 
-
-```{r}
+ggsave("~/GitHub/LongitudinalResilienceStudy2024/Community_Trends/FreeportTXTrends_BrownShrimp.png",
+       plot = Freeport_BrShrimp_plot,
+       width = 14, height = 6, units = "in")
+       
+print(Freeport_BrShrimp_plot)
 
 ```
+
+
+
+
 

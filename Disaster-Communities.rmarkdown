@@ -1,0 +1,870 @@
+---
+title: "Disaster Communities"
+author: "Suzana Blake"
+format: html
+---
+
+---
+title: "Shrimp Analysis - March 2024"
+author: "SB"
+format: html
+---
+
+```{r}
+#| echo: false
+#| warning: false
+
+library("tidyverse")
+library("dplyr")
+library("ggplot2")
+
+options(scipen = 999) # takes away the scientific notation 
+```
+
+```{r}
+# Load the GI data - with inflation adjusted values
+GI <- readRDS("~/Resilience/GitReady/UpdatedData/GI.RData")
+
+# Display a summary of the GI data
+summary(GI)
+
+
+
+```
+
+```{r}
+com_names<-unique(GI$common_name)
+order(com_names)
+list(com_names)
+com_names[str_detect(com_names, regex("MENHADENS", ignore_case = T))]
+com_names[str_detect(com_names, regex("MENHADEN", ignore_case = F ))]
+com_names[str_detect(com_names, regex("GROUPERS", ignore_case = T ))]
+com_names[str_detect(com_names, regex("GROUPER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("SNAPPER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("OYSTER,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("CRAB,", ignore_case = T ))]
+com_names[str_detect(com_names, regex("STONE", ignore_case = T ))]
+com_names[str_detect(com_names, regex("CRAB, BLUE", ignore_case = T ))]
+com_names[str_detect(com_names, regex("LOBSTER", ignore_case = T ))]
+com_names[str_detect(com_names, regex("SHRIMP", ignore_case = T ))]
+
+
+GI <- GI %>%
+  mutate(common_name_cleaned = case_when(
+    grepl("GROUPER,\\s*(WARSAW|GAG|YELLOWEDGE|RED|BLACK|YELLOWFIN|SNOWY|NASSAU|YELLOWMOUTH|MISTY|TIGER|MARBLED|HIND RED|SCAMP|SPECKLED HIND|CONEY)", common_name, ignore.case = TRUE) ~ "Grouper",
+    grepl("SNAPPER,\\s*(RED|GRAY|VERMILION|MUTTON|LANE|YELLOWTAIL|SILK|CUBERA|BLACKFIN|QUEEN|GLASSEYE|DOG|BLACK|MAHOGANY|CARIBBEAN RED)", common_name, ignore.case = TRUE) ~ "Snapper",
+    grepl("CRAB,\\s*(FLORIDA STONE|STONE)", common_name, ignore.case = TRUE) ~ "Stone Crab",
+    
+    grepl("CRABS,\\s*(FLORIDA STONE|STONE)", common_name, ignore.case = TRUE) ~ "Stone Crab",
+    grepl("CRABS,\\s*(BLUE LAND|BLUE)", common_name, ignore.case = TRUE) ~ "Blue Crab",
+    grepl("CRAB,\\s*(BLUE LAND|BLUE)", common_name, ignore.case = TRUE) ~ "Blue Crab",
+    grepl("LOBSTER,\\s*(CARIBEAN SPINY|SPINY|SPOTTED SPINY|SPANISH|)", common_name, ignore.case = TRUE) ~ "Spiny Lobster",
+    TRUE ~ common_name
+  ))
+```
+
+```{r}
+library(dplyr)
+
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Group the data by dealer_city and count the distinct states for each city
+city_state_counts <- GI %>%
+  group_by(dealer_city) %>%
+  summarize(
+    unique_states = n_distinct(dealer_state),
+    total_records = n(),
+    states = paste(unique(dealer_state), collapse = ", ")
+  )
+
+# Filter cities linked to more than one state
+cities_with_multiple_states <- city_state_counts %>%
+  filter(unique_states > 1)
+
+# View the results
+print(cities_with_multiple_states)
+
+# Visualization
+ggplot(cities_with_multiple_states, aes(x = reorder(dealer_city, -unique_states), y = unique_states)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(
+    title = "Cities in Multiple States",
+    x = "City",
+    y = "Number of States"
+  ) +
+  theme_minimal()
+
+```
+
+
+
+
+Vizualize states in which these cities appear in 
+
+
+```{r}
+
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Group the data by dealer_city and count the distinct states for each city
+city_state_counts <- GI %>%
+  group_by(dealer_city) %>%
+  summarize(
+    unique_states = n_distinct(dealer_state),  # Count of distinct states
+    total_records = n(),                       # Total number of records for the city
+    states = paste(unique(dealer_state), collapse = ", ")  # List of states
+  )
+
+# Filter cities linked to more than one state
+cities_with_multiple_states <- city_state_counts %>%
+  filter(unique_states > 1)
+
+# View the results (including the list of states)
+print(cities_with_multiple_states)
+
+# Print just the cities and their corresponding states for clarity
+print(cities_with_multiple_states %>% select(dealer_city, states))
+
+# Visualization
+ggplot(cities_with_multiple_states, aes(x = reorder(dealer_city, -unique_states), y = unique_states)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(
+    title = "Cities in Multiple States",
+    x = "City",
+    y = "Number of States"
+  ) +
+  theme_minimal()
+
+names(GI)
+
+```
+
+##Select Community Analysis
+
+Filter Cities in FL
+
+
+```{r}
+# Filter the data for cities in Florida
+florida_cities <- GI %>%
+  filter(dealer_state == "FL") %>%
+  select(dealer_city) %>%
+  distinct() %>%
+  arrange(dealer_city)
+
+# View the unique cities in Florida
+print(florida_cities)
+```
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Define the cities of interest
+cities_of_interest <- c("BIG PINE KEY", "BOKEELIA", "CHOKOLOSKEE", "CORTEZ", "DESTIN", "EVERGLADES CITY", "HIALEAH", "KEY LARGO", "KEY WEST", "MADEIRA BEACH", "MARCO ISLAND", "MATLACHA", "MIAMI", "PINELAND", "SANIBEL", "STEINHATCHEE", "TARPON SPRINGS", "VENICE", 				
+"VENICE FL")
+
+# Filter the data for these cities
+filtered_data <- GI %>%
+  filter(dealer_city %in% cities_of_interest)
+
+```
+
+
+Step 2: Summarize the Fish Portfolio
+Create a summary to understand the portfolio of fish species for each city over time
+
+
+
+```{r}
+# Summarize the portfolio of fish species for each city over time
+fish_portfolio <- filtered_data %>%
+  group_by(dealer_city, landed_year, common_name_cleaned) %>%
+  summarize(
+    total_lbs = sum(live_lbs, na.rm = TRUE),
+    total_value = sum(value, na.rm = TRUE)
+  )
+
+# View the summary
+print(fish_portfolio)
+
+```
+
+
+
+To determine the top 3 species by Adjusted Value for each city for each decade:
+
+Filter and Create Decade Column: Add a column to represent the decade each record belongs to.
+Group and Summarize: Group the data by city, decade, and species, then summarize by the total Adjusted Value.
+Rank and Filter: Rank the species within each city and decade, and filter to keep only the top 3.
+Here is the R code to achieve this:
+
+Step 1: Filter and Create Decade Column
+
+
+```{r}
+# Load necessary library
+library(dplyr)
+
+# Add a decade column to the data
+GI <- GI %>%
+  mutate(decade = floor(landed_year / 10) * 10)
+
+```
+
+
+## BIG PINE KEY
+
+# Hurricanes that impacted Big Pine Key
+
+Hurricane Donna (1960): This hurricane wreaked havoc in the Middle and Upper Keys. Big Pine Key experienced significant damage, with sustained winds reported at 140 mph and gusts up to 180 mph. Tidal surges ranged from 8 to 13.5 feet.
+
+Hurricane Betsy (1965): Known for changing direction multiple times, Betsy severely damaged the Middle and Lower Keys, including Big Pine Key. The island reported wind gusts as high as 160 mph and confirmed tornadoes in the area.
+
+Hurricane Georges (1998): Georges caused substantial damage in the Florida Keys, including Big Pine Key. The storm brought strong winds and significant storm surge, leading to widespread flooding and structural damage.
+
+Hurricane Wilma (2005): This hurricane brought severe storm surge and flooding to the Florida Keys, including Big Pine Key. It caused extensive property damage and disruption.
+
+Hurricane Irma (2017): One of the most impactful hurricanes in recent history, Irma made landfall in the Keys as a Category 4 hurricane. Big Pine Key, along with Cudjoe Key, took the brunt of the storm. The area was left devastated, with widespread destruction of homes and infrastructure. The Key Deer refuge on Big Pine Key was also heavily impacted
+
+#Step 2: Group, Summarize, Rank, and Filter
+
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# Drop rows with NAs in relevant columns
+GI_cleaned <- GI %>%
+  filter(!is.na(dealer_city) & !is.na(landed_year) & !is.na(common_name_cleaned) & !is.na(Adjusted_Val))
+
+# Add a decade column to the data
+GI_cleaned <- GI_cleaned %>%
+  mutate(decade = floor(landed_year / 10) * 10)
+# Filter the data for Big Pine Key
+big_pine_key_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY")
+
+# Group, summarize, rank, and filter to get top 3 species by Adjusted Value for Big Pine Key for each decade
+top_species_bpk <- big_pine_key_data %>%
+  group_by(dealer_city, decade, common_name_cleaned) %>%
+  summarize(total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE)) %>%
+  arrange(dealer_city, decade, desc(total_adjusted_value)) %>%
+  group_by(dealer_city, decade) %>%
+  mutate(rank = row_number()) %>%
+  filter(rank <= 3) %>%
+  ungroup() %>%
+  arrange(dealer_city, decade, rank)
+# Create a summary table
+library(tidyr)
+
+summary_table_bpk <- top_species_bpk %>%
+  pivot_wider(names_from = rank, values_from = c(common_name_cleaned, total_adjusted_value), 
+              names_prefix = "species_") %>%
+  arrange(dealer_city, decade)
+
+# View the summary table
+print(summary_table_bpk)
+
+# Load necessary library
+library(ggplot2)
+
+# Create a visualization for Big Pine Key
+ggplot(top_species_bpk, aes(x = factor(decade), y = total_adjusted_value, fill = common_name_cleaned)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_text(aes(label = ifelse(common_name_cleaned %in% c("Spiny Lobster", "Stone Crab", "Blue Crab", "Snapper"), common_name_cleaned, "")), 
+            position = position_dodge(width = 0.9), vjust = -0.5, color = "black", size = 3) +
+  labs(
+    title = "Top 3 Species by Adjusted Value for Big Pine Key by Decade",
+    x = "Decade",
+    y = "Total Adjusted Value",
+    fill = "Species"
+  ) +
+  theme_minimal()
+
+```
+
+
+Landed Pounds
+
+
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# Drop rows with NAs in relevant columns
+GI_cleaned <- GI %>%
+  filter(!is.na(dealer_city) & !is.na(landed_year) & !is.na(common_name_cleaned) & !is.na(live_lbs))
+
+# Add a decade column to the data
+GI_cleaned <- GI_cleaned %>%
+  mutate(decade = floor(landed_year / 10) * 10)
+
+# Filter the data for Big Pine Key
+big_pine_key_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY")
+
+# Group, summarize, rank, and filter to get top 3 species by live lbs for Big Pine Key for each decade
+top_species_bpk <- big_pine_key_data %>%
+  group_by(dealer_city, decade, common_name_cleaned) %>%
+  summarize(total_live_lbs = sum(live_lbs, na.rm = TRUE)) %>%
+  arrange(dealer_city, decade, desc(total_live_lbs)) %>%
+  group_by(dealer_city, decade) %>%
+  mutate(rank = row_number()) %>%
+  filter(rank <= 3) %>%
+  ungroup() %>%
+  arrange(dealer_city, decade, rank)
+
+# Create a summary table
+summary_table_bpk <- top_species_bpk %>%
+  pivot_wider(names_from = rank, values_from = c(common_name_cleaned, total_live_lbs), 
+              names_prefix = "species_") %>%
+  arrange(dealer_city, decade)
+
+# View the summary table
+print(summary_table_bpk)
+
+# Create a visualization for Big Pine Key
+ggplot(top_species_bpk, aes(x = factor(decade), y = total_live_lbs, fill = common_name_cleaned)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_text(aes(label = ifelse(common_name_cleaned %in% c("Spiny Lobster", "Stone Crab", "Blue Crab"), common_name_cleaned, "")), 
+            position = position_dodge(width = 0.9), vjust = -0.5, color = "black", size = 3) +
+  labs(
+    title = "Top 3 Species by Live Lbs for Big Pine Key by Decade",
+    x = "Decade",
+    y = "Total Live Lbs",
+    fill = "Species"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Drop rows with NAs in relevant columns
+GI_cleaned <- GI %>%
+  filter(!is.na(dealer_city) & !is.na(landed_year) & 
+         !is.na(common_name_cleaned) & !is.na(live_lbs) & 
+         !is.na(Adjusted_Val))
+
+# Filter the data for Big Pine Key and the specified species
+species_of_interest <- c("Snapper", "Blue Crab", "Stone Crab", "Spiny Lobster")
+big_pine_key_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & common_name_cleaned %in% species_of_interest)
+
+# Summarize by year
+summary_data <- big_pine_key_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_live_lbs = sum(live_lbs, na.rm = TRUE),
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE)
+  ) %>%
+  arrange(landed_year)
+
+# View the summary data
+print(summary_data)
+
+# Visualization for Live Pounds over time
+ggplot(summary_data, aes(x = landed_year, y = total_live_lbs, color = common_name_cleaned)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Landed Pounds for Selected Species in Big Pine Key Over Time",
+    x = "Year",
+    y = "Total Live Pounds",
+    color = "Species"
+  ) +
+  theme_minimal()
+
+# Visualization for Adjusted Value over time
+ggplot(summary_data, aes(x = landed_year, y = total_adjusted_value, color = common_name_cleaned)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Adjusted Value for Selected Species in Big Pine Key Over Time",
+    x = "Year",
+    y = "Total Adjusted Value",
+    color = "Species"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Drop rows with NAs in relevant columns
+GI_cleaned <- GI %>%
+  filter(!is.na(dealer_city) & !is.na(landed_year) & 
+         !is.na(common_name_cleaned) & !is.na(live_lbs) & 
+         !is.na(Adjusted_Val))
+
+# Filter the data for Big Pine Key and the specified species
+species_of_interest <- c("Snapper", "Blue Crab", "Stone Crab", "Spiny Lobster")
+big_pine_key_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & common_name_cleaned %in% species_of_interest)
+
+# Summarize by year
+summary_data <- big_pine_key_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_live_lbs = sum(live_lbs, na.rm = TRUE),
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year)
+
+# View the summary data
+print(summary_data)
+
+# Define hurricane years and labels
+hurricane_data <- data.frame(
+  year = c(1998, 2005, 2017),
+  label = c("Georges", "Wilma", "Irma")
+)
+
+# Calculate y-position for the labels
+max_live_lbs <- max(summary_data$total_live_lbs, na.rm = TRUE)
+max_adjusted_value <- max(summary_data$total_adjusted_value, na.rm = TRUE)
+
+# Visualization for Live Pounds over time
+ggplot(summary_data, aes(x = landed_year, y = total_live_lbs, color = common_name_cleaned)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  geom_vline(data = hurricane_data, aes(xintercept = year), linetype = "dashed", color = "red") +
+  geom_text(data = hurricane_data, aes(x = year, y = max_live_lbs, label = label), angle = 90, vjust = -0.5, hjust = -0.2, inherit.aes = FALSE) +
+  labs(
+    title = "Landed Pounds for Selected Species in Big Pine Key Over Time",
+    x = "Year",
+    y = "Total Live Pounds",
+    color = "Species"
+  ) +
+  theme_minimal()
+
+# Visualization for Adjusted Value over time
+ggplot(summary_data, aes(x = landed_year, y = total_adjusted_value, color = common_name_cleaned)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  geom_vline(data = hurricane_data, aes(xintercept = year), linetype = "dashed", color = "red") +
+  geom_text(data = hurricane_data, aes(x = year, y = max_adjusted_value, label = label), angle = 90, vjust = -0.5, hjust = -0.2, inherit.aes = FALSE) +
+  labs(
+    title = "Adjusted Value for Selected Species in Big Pine Key Over Time",
+    x = "Year",
+    y = "Total Adjusted Value",
+    color = "Species"
+  ) +
+  theme_minimal()
+
+
+
+```
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Drop rows with NAs in relevant columns
+GI_cleaned <- GI %>%
+  filter(!is.na(dealer_city) & !is.na(landed_year) & !is.na(dealer_id))
+
+# Filter the data for Big Pine Key
+big_pine_key_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY")
+
+# Summarize the number of dealers by year
+dealer_summary <- big_pine_key_data %>%
+  group_by(landed_year) %>%
+  summarize(
+    number_of_dealers = n_distinct(dealer_id),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year)
+
+# View the summary data
+print(dealer_summary)
+
+# Define hurricane years and labels
+hurricane_data <- data.frame(
+  year = c(1998, 2005, 2017),
+  label = c("Georges", "Wilma", "Irma")
+)
+
+# Calculate y-position for the labels
+max_dealers <- max(dealer_summary$number_of_dealers, na.rm = TRUE)
+
+# Visualization for the number of dealers over time
+ggplot(dealer_summary, aes(x = landed_year, y = number_of_dealers)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  geom_vline(data = hurricane_data, aes(xintercept = year), linetype = "dashed", color = "red") +
+  geom_text(data = hurricane_data, aes(x = year, y = max_dealers, label = label), angle = 90, vjust = -0.5, hjust = -0.2, inherit.aes = FALSE) +
+  labs(
+    title = "Number of Dealers in Big Pine Key Over Time",
+    x = "Year",
+    y = "Number of Dealers"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+# Filter the data for Big Pine Key in 2017
+dealers_2017 <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & landed_year == 2017) %>%
+  select(dealer_id, corporate_name) %>%
+  distinct() %>%
+  head(20)
+
+# View the dealers
+print(dealers_2017)
+```
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+# List of specific dealers for Big Pine Key in 2017
+specific_dealers <- c("BECKER VERNIE J", "GBU FISH INC", "ROCKETT GEORGE WIII", "DG SEAFOOD LLC", 
+                      "SEA CRITTERS", "HOLROYD ENTERPRISES INC.", "SOUTHERN OCEAN DIRECT LLC", 
+                      "DOMINICAK WILLIAM N", "GOULD PHILLIP N", "BURKMAN KEITH L", "SULLIVAN, STEPHEN", "PULLEY, AMY LYNN", "SHARP JEREMY D", "FUN YET CHARTERS", "ANGELL, MATTHEW", "PEREZ PEDRO M", "MILLSAPS JAMES", "KULL KENNETH G", "KEYS CUISINE, INC", "KRUSZKA, LINDA")
+
+# Drop rows with NAs in relevant columns
+GI_cleaned <- GI %>%
+  filter(!is.na(dealer_city) & !is.na(landed_year) & 
+         !is.na(corporate_name) & !is.na(live_lbs) & 
+         !is.na(Adjusted_Val))
+
+# Filter the data for Big Pine Key and the specific dealers
+big_pine_key_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & corporate_name %in% specific_dealers)
+
+# Check for missing dealers
+missing_dealers <- setdiff(specific_dealers, unique(big_pine_key_data$corporate_name))
+print(paste("Missing dealers:", paste(missing_dealers, collapse = ", ")))
+
+# Summarize by year and dealer
+summary_data <- big_pine_key_data %>%
+  group_by(landed_year, corporate_name) %>%
+  summarize(
+    total_live_lbs = sum(live_lbs, na.rm = TRUE),
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(corporate_name, landed_year)
+
+# View the summary data
+print(summary_data)
+
+# Create a long format for faceting
+summary_data_long <- summary_data %>%
+  pivot_longer(cols = c(total_live_lbs, total_adjusted_value), 
+               names_to = "variable", values_to = "value")
+
+# Define hurricane years and labels
+hurricane_data <- data.frame(
+  year = c(1998, 2005, 2017),
+  label = c("Georges", "Wilma", "Irma")
+)
+
+# Calculate y-position for the labels
+max_value <- max(summary_data_long$value, na.rm = TRUE)
+
+# Visualization with facets for each dealer
+ggplot(summary_data_long, aes(x = landed_year, y = value, color = variable)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_wrap(~ corporate_name, scales = "free_y") +
+  geom_vline(data = hurricane_data, aes(xintercept = year), linetype = "dashed", color = "red") +
+  geom_text(data = hurricane_data, aes(x = year, y = max_value, label = label), angle = 90, vjust = -0.5, hjust = -0.2, inherit.aes = FALSE) +
+  labs(
+    title = "Adjusted Value and Live Pounds Over Time for Dealers in Big Pine Key",
+    x = "Year",
+    y = "Value",
+    color = "Metric"
+  ) +
+  theme_minimal()
+
+
+```
+
+
+#Only dealers with multiple year landings
+
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+# List of specific dealers for Big Pine Key in 2017
+top_dealers <- c("GBU FISH INC", "DG SEAFOOD LLC", 
+                      "SEA CRITTERS", "HOLROYD ENTERPRISES INC.", "SOUTHERN OCEAN DIRECT LLC", "SULLIVAN, STEPHEN", "PULLEY, AMY LYNN", "FUN YET CHARTERS", "KEYS CUISINE, INC", "KRUSZKA, LINDA")
+
+# Drop rows with NAs in relevant columns
+GI_cleaned <- GI %>%
+  filter(!is.na(dealer_city) & !is.na(landed_year) & 
+         !is.na(corporate_name) & !is.na(live_lbs) & 
+         !is.na(Adjusted_Val))
+
+# Filter the data for Big Pine Key and the specific dealers
+big_pine_key_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & corporate_name %in% specific_dealers)
+
+# Check for missing dealers
+missing_dealers <- setdiff(top_dealers, unique(big_pine_key_data$corporate_name))
+print(paste("Missing dealers:", paste(missing_dealers, collapse = ", ")))
+
+# Summarize by year and dealer
+summary_data <- big_pine_key_data %>%
+  group_by(landed_year, corporate_name) %>%
+  summarize(
+    total_live_lbs = sum(live_lbs, na.rm = TRUE),
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(corporate_name, landed_year)
+
+# View the summary data
+print(summary_data)
+
+# Create a long format for faceting
+summary_data_long <- summary_data %>%
+  pivot_longer(cols = c(total_live_lbs, total_adjusted_value), 
+               names_to = "variable", values_to = "value")
+
+# Define hurricane years and labels
+hurricane_data <- data.frame(
+  year = c(1998, 2005, 2017),
+  label = c("Georges", "Wilma", "Irma")
+)
+
+# Calculate y-position for the labels
+max_value <- max(summary_data_long$value, na.rm = TRUE)
+
+# Visualization with facets for each dealer
+ggplot(summary_data_long, aes(x = landed_year, y = value, color = variable)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_wrap(~ corporate_name, scales = "free_y") +
+  geom_vline(data = hurricane_data, aes(xintercept = year), linetype = "dashed", color = "red") +
+  geom_text(data = hurricane_data, aes(x = year, y = max_value, label = label), angle = 90, vjust = -0.5, hjust = -0.2, inherit.aes = FALSE) +
+  labs(
+    title = "Adjusted Value and Live Pounds Over Time for Dealers in Big Pine Key",
+    x = "Year",
+    y = "Value",
+    color = "Metric"
+  ) +
+  theme_minimal()
+```
+
+
+## clearly Hurricane Irma had a negative impact on the seafood dealers in BPK. The overal landings decreased and the number of dealers dropped by 50 percent. The dealers that were not able to continue business had not had a long time in the business
+
+To analyze the top 5 species by adjusted value landed by "Southern Ocean Direct LLC" in Big Pine Key since 2010, follow these steps:
+
+Filter the Data: Focus on the data for "Southern Ocean Direct LLC" in Big Pine Key since 2010.
+Summarize by Year and Species: Calculate the total Adjusted Value for each species within each year.
+Rank and Filter: Rank species within each year and filter to get the top five.
+
+
+Highlight: SOUTHERN OCEAN DIRECT LLC which did well
+
+
+
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Drop rows with NAs in relevant columns
+GI_cleaned <- GI %>%
+  filter(!is.na(dealer_city) & !is.na(landed_year) & 
+         !is.na(corporate_name) & !is.na(common_name_cleaned) & 
+         !is.na(Adjusted_Val))
+
+# Filter the data for Southern Ocean Direct LLC in Big Pine Key since 2010
+sod_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & corporate_name == "SOUTHERN OCEAN DIRECT LLC")
+
+# Summarize by year and species
+species_summary <- sod_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Rank and filter to get top 5 species for each year
+top_species <- species_summary %>%
+  group_by(landed_year) %>%
+  mutate(rank = row_number()) %>%
+  filter(rank <= 5) %>%
+  ungroup()
+
+# View the top species
+print(top_species)
+
+# Visualization
+ggplot(top_species, aes(x = factor(landed_year), y = total_adjusted_value, fill = common_name_cleaned)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Top 5 Species by Adjusted Value for Southern Ocean Direct LLC in Big Pine Key (2010 onwards)",
+    x = "Year",
+    y = "Total Adjusted Value",
+    fill = "Species"
+  ) +
+  theme_minimal()
+
+```
+
+
+
+
+Looking at key species for this region
+
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+# Drop rows with NAs in relevant columns
+GI_cleaned <- GI %>%
+  filter(!is.na(dealer_city) & !is.na(corporate_name) & 
+         !is.na(common_name_cleaned) & !is.na(Adjusted_Val))
+
+# Convert common_name_cleaned to lowercase for consistency
+GI_cleaned <- GI_cleaned %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+# Filter the data for SEA CRITTERS in Big Pine Key
+sea_critters_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & corporate_name == "SEA CRITTERS")
+
+# Summarize by species
+species_summary <- sea_critters_data %>%
+  group_by(common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(total_adjusted_value))
+
+# Print the summary data
+print(species_summary)
+
+# Visualization
+ggplot(species_summary, aes(x = reorder(common_name_cleaned, total_adjusted_value), y = total_adjusted_value)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(
+    title = "Species Landed by SEA CRITTERS in Big Pine Key Ordered by Adjusted Value",
+    x = "Species",
+    y = "Total Adjusted Value"
+  ) +
+  theme_minimal()
+
+
+```
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(stringr)
+
+# Drop rows with NAs in relevant columns
+GI_cleaned <- GI %>%
+  filter(!is.na(dealer_city) & !is.na(landed_year) & 
+         !is.na(corporate_name) & !is.na(common_name_cleaned) & 
+         !is.na(Adjusted_Val))
+
+# Convert common_name_cleaned to lowercase for consistency
+GI_cleaned <- GI_cleaned %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+# Filter the data for SEA CRITTERS in Big Pine Key
+sea_critters_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & corporate_name == "SEA CRITTERS")
+
+# Summarize by year and species
+species_summary <- sea_critters_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Rank and filter to get top 5 species for each year
+top_species <- species_summary %>%
+  group_by(landed_year) %>%
+  mutate(rank = row_number()) %>%
+  filter(rank <= 5) %>%
+  ungroup() %>%
+  arrange(landed_year, rank)
+
+# Print the top species summary table
+print(top_species)
+
+# Optionally, save the table to a CSV file
+write.csv(top_species, "top_species_sea_critters.csv", row.names = FALSE)
+
+```
+
+```{r}
+# Convert common_name_cleaned to lowercase for consistency
+GI_cleaned <- GI_cleaned %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+# Filter the data for SEA CRITTERS in Big Pine Key for the year 2017
+sea_critters_2017 <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & corporate_name == "SEA CRITTERS" & landed_year == 2017)
+
+# Summarize by species
+species_summary_2017 <- sea_critters_2017 %>%
+  group_by(common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(total_adjusted_value))
+
+# Print the summary data for 2017
+print(species_summary_2017)
+
+# Visualization
+ggplot(species_summary_2017, aes(x = reorder(common_name_cleaned, total_adjusted_value), y = total_adjusted_value)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(
+    title = "Species Landed by SEA CRITTERS in Big Pine Key (2017)",
+    x = "Species",
+    y = "Total Adjusted Value"
+  ) +
+  theme_minimal()
+```
+

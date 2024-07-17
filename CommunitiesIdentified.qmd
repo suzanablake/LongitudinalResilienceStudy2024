@@ -4,6 +4,9 @@ author: "Suzana Blake"
 ---
 ###Longitudinal Dealers Project
 
+
+- this file is not finalized and should not be used at this point for anything else but viewing
+
 ##Background:
 In order to calculate fisheries engagement and reliance, we depend on several variables. One of the critical variables is the number of dealers a community has in a given year. This is a valuable metric, and even proxy, in determining how important fisheries is to a community – the higher the number of dealers can imply: more opportunities for fishermen to sell their fish (thus drawing in more fishermen into that community), a community which depends on, or promotes, its seafood heritage, and/or a community which is located in an area with good fishing grounds.
 Dealer data is currently collected through various data sources: ALS, ACCSP, and GSFMC. Over the past several decades, many states have transitioned, at different times, to the Trip Ticket program. Yet, not all states have digitized nor kept records of “historic” fisheries landings data. Because of the lack in “clean” and “accurate” data, it is difficult to properly calculate long-term fisheries engagement and reliance scores.
@@ -40,6 +43,7 @@ library("skimr")
 library("janitor")
 library("dplyr")
 library("ggplot2")
+
 
 options(scipen = 999) # takes away the scientific notation 
 ```
@@ -176,6 +180,28 @@ ggplot(Top10_LA,aes(x=landed_year, y=live_lbs))+
     theme(axis.text.x = element_text(angle=90))
 
 
+ggplot(TopShrimp,aes(x=landed_year, y=live_lbs))+
+  stat_summary(geom="bar", fun="mean", na.rm = T,position=position_stack(), aes(fill=common_name))+
+   labs(
+    title = "Fishing Trends for Brown and White Shrimp Louisiana",
+    subtitle = "Landed Pounds for the entire state",
+    x = "Landed Year", y = "Total Landed Pounds",
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+    theme(axis.text.x = element_text(angle=90))
+
+
+ggplot(TopShrimp,aes(x=landed_year, y=Adjusted_Val))+
+  stat_summary(geom="bar", fun="mean", na.rm = T,position=position_stack(), aes(fill=common_name))+
+   labs(
+    title = "Fishing Trends for Brown and White Shrimp Louisiana",
+    subtitle = "Values for the entire state",
+    x = "Landed Year", y = "Total Value",
+    fill = "Species"  # Add this line to label the fill legend
+    )+
+    theme(axis.text.x = element_text(angle=90))
+
+
 ```
 
 Trends by County 
@@ -288,12 +314,38 @@ ggplot(Shrimp_Fig, aes(x=landed_year, y=ValuesBoth))+
 
 
 
-
-
 ```
 
 
 
+```{r}
+# Selecting the necessary columns
+TopShrimp <- TopShrimp %>% select(landed_year, county_name, dealer_city, common_name, live_lbs, Adjusted_Val)
+
+# Pivoting the data
+Shrimp_Fig <- TopShrimp %>%
+  pivot_longer(
+    cols = c(live_lbs, Adjusted_Val),
+    names_to = "ShrimpSpecies",
+    values_to = "ValuesBoth" , 
+    names_pattern = "(.*)",
+    names_repair = function(x) {
+      x <- sub("live_lbs", "Landed Pounds", x)
+      x <- sub("Adjusted_Val", "Values", x)
+      x
+    }
+  )
+
+# Creating the plot
+ggplot(Shrimp_Fig, aes(x = landed_year, y = ValuesBoth)) +
+  facet_wrap(~common_name, ncol = 1) +
+  stat_summary(geom = "line", fun = "sum", aes(color = ShrimpSpecies)) +
+  labs(
+    x = "Landed Year",
+    y = "Inflation Adjusted Values",
+    color = "Landings"
+  )
+```
 
 
 
@@ -508,6 +560,8 @@ ggplot(Cam_City,aes(x=landed_year, y=value))+
     subtitle = "Most Valuable Commercial Fish Species for Louisiana",
     x = "Year", y = "Annual Value")+
   theme(axis.text.x = element_text(angle=90))
+
+
 ```
 
 ##Communities in Jefferson Parish

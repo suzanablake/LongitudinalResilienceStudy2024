@@ -282,7 +282,7 @@ interesting_patterns <- City_aggregation_Change %>%
   )
 
 
-#library(openxlsx)
+library(openxlsx)
 # Specify the main folder path
 main_folder <- "C:/Users/Suzana.Mic/Documents/Resilience/GitReady/CHANGE"
 
