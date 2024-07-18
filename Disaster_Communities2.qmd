@@ -205,7 +205,7 @@ To determine the top 3 species by Adjusted Value for each city for each decade:
 Filter and Create Decade Column: Add a column to represent the decade each record belongs to.
 Group and Summarize: Group the data by city, decade, and species, then summarize by the total Adjusted Value.
 Rank and Filter: Rank the species within each city and decade, and filter to keep only the top 3.
-Here is the R code to achieve this:
+
 
 Step 1: Filter and Create Decade Column
 
@@ -259,7 +259,7 @@ top_species_bpk <- big_pine_key_data %>%
   arrange(dealer_city, decade, desc(total_adjusted_value)) %>%
   group_by(dealer_city, decade) %>%
   mutate(rank = row_number()) %>%
-  filter(rank <= 3) %>%
+  filter(rank <= 5) %>%
   ungroup() %>%
   arrange(dealer_city, decade, rank)
 # Create a summary table
@@ -282,7 +282,7 @@ ggplot(top_species_bpk, aes(x = factor(decade), y = total_adjusted_value, fill =
   geom_text(aes(label = ifelse(common_name_cleaned %in% c("Spiny Lobster", "Stone Crab", "Blue Crab", "Snapper"), common_name_cleaned, "")), 
             position = position_dodge(width = 0.9), vjust = -0.5, color = "black", size = 3) +
   labs(
-    title = "Top 3 Species by Adjusted Value for Big Pine Key by Decade",
+    title = "Top 5 Species by Adjusted Value for Big Pine Key by Decade",
     x = "Decade",
     y = "Total Adjusted Value",
     fill = "Species"
@@ -290,6 +290,11 @@ ggplot(top_species_bpk, aes(x = factor(decade), y = total_adjusted_value, fill =
   theme_minimal()
 
 ```
+
+In the graph above we can see that for the 2010 decade
+
+The decade column shows the start of each decade, and the data is summarized for each decade (e.g., 2010 means 2010 to 2019).
+The plot will show the total adjusted value of the top 5 species for each decade.
 
 Landed Pounds
 
@@ -481,7 +486,7 @@ library(ggplot2)
 
 # Drop rows with NAs in relevant columns
 GI_cleaned <- GI %>%
-  filter(!is.na(dealer_city) & !is.na(landed_year) & !is.na(dealer_id))
+  filter(!is.na(dealer_city) & !is.na(landed_year))
 
 # Filter the data for Big Pine Key
 big_pine_key_data <- GI_cleaned %>%
@@ -547,22 +552,17 @@ specific_dealers <- c("BECKER VERNIE J", "GBU FISH INC", "ROCKETT GEORGE WIII", 
                       "SEA CRITTERS", "HOLROYD ENTERPRISES INC.", "SOUTHERN OCEAN DIRECT LLC", 
                       "DOMINICAK WILLIAM N", "GOULD PHILLIP N", "BURKMAN KEITH L", "SULLIVAN, STEPHEN", "PULLEY, AMY LYNN", "SHARP JEREMY D", "FUN YET CHARTERS", "ANGELL, MATTHEW", "PEREZ PEDRO M", "MILLSAPS JAMES", "KULL KENNETH G", "KEYS CUISINE, INC", "KRUSZKA, LINDA")
 
-# Drop rows with NAs in relevant columns
-GI_cleaned <- GI %>%
-  filter(!is.na(dealer_city) & !is.na(landed_year) & 
-         !is.na(corporate_name) & !is.na(live_lbs) & 
-         !is.na(Adjusted_Val))
 
 # Filter the data for Big Pine Key and the specific dealers
-big_pine_key_data <- GI_cleaned %>%
-  filter(dealer_city == "BIG PINE KEY" & corporate_name %in% specific_dealers)
+big_pine_key <- GI_cleaned %>%
+  filter(corporate_name %in% specific_dealers)
 
 # Check for missing dealers
-missing_dealers <- setdiff(specific_dealers, unique(big_pine_key_data$corporate_name))
+missing_dealers <- setdiff(specific_dealers, unique(big_pine_key$corporate_name))
 print(paste("Missing dealers:", paste(missing_dealers, collapse = ", ")))
 
 # Summarize by year and dealer
-summary_data <- big_pine_key_data %>%
+summary_data <- big_pine_key %>%
   group_by(landed_year, corporate_name) %>%
   summarize(
     total_live_lbs = sum(live_lbs, na.rm = TRUE),
@@ -618,22 +618,18 @@ library(tidyr)
 top_dealers <- c("GBU FISH INC", "DG SEAFOOD LLC", 
                       "SEA CRITTERS", "HOLROYD ENTERPRISES INC.", "SOUTHERN OCEAN DIRECT LLC", "SULLIVAN, STEPHEN", "PULLEY, AMY LYNN", "FUN YET CHARTERS", "KEYS CUISINE, INC", "KRUSZKA, LINDA")
 
-# Drop rows with NAs in relevant columns
-GI_cleaned <- GI %>%
-  filter(!is.na(dealer_city) & !is.na(landed_year) & 
-         !is.na(corporate_name) & !is.na(live_lbs) & 
-         !is.na(Adjusted_Val))
+
 
 # Filter the data for Big Pine Key and the specific dealers
-big_pine_key_data <- GI_cleaned %>%
-  filter(dealer_city == "BIG PINE KEY" & corporate_name %in% specific_dealers)
+big_pine_key <- GI_cleaned %>%
+  filter(corporate_name %in% top_dealers)
 
 # Check for missing dealers
-missing_dealers <- setdiff(top_dealers, unique(big_pine_key_data$corporate_name))
+missing_dealers <- setdiff(top_dealers, unique(big_pine_key$corporate_name))
 print(paste("Missing dealers:", paste(missing_dealers, collapse = ", ")))
 
 # Summarize by year and dealer
-summary_data <- big_pine_key_data %>%
+summary_data <- big_pine_key %>%
   group_by(landed_year, corporate_name) %>%
   summarize(
     total_live_lbs = sum(live_lbs, na.rm = TRUE),
@@ -675,9 +671,9 @@ ggplot(summary_data_long, aes(x = landed_year, y = value, color = variable)) +
   theme_minimal()
 ```
 
-## clearly Hurricane Irma had a negative impact on the seafood dealers in BPK. The overal landings decreased and the number of dealers dropped by 50 percent. The dealers that were not able to continue business had not had a long time in the business
+## clearly Hurricane Irma had a negative impact on the seafood dealers in BPK. The overal landings decreased and the number of dealers dropped by 50 percent (from 20 to 10). 
 
-To analyze the top 5 species by adjusted value landed by "Southern Ocean Direct LLC" in Big Pine Key since 2010, follow these steps:
+Analyze the top 5 species by adjusted value landed by "Southern Ocean Direct LLC" in Big Pine Key since 2010, follow these steps:
 
 Filter the Data: Focus on the data for "Southern Ocean Direct LLC" in Big Pine Key since 2010.
 Summarize by Year and Species: Calculate the total Adjusted Value for each species within each year.
@@ -693,11 +689,7 @@ Highlight: SOUTHERN OCEAN DIRECT LLC which did well
 library(dplyr)
 library(ggplot2)
 
-# Drop rows with NAs in relevant columns
-GI_cleaned <- GI %>%
-  filter(!is.na(dealer_city) & !is.na(landed_year) & 
-         !is.na(corporate_name) & !is.na(common_name_cleaned) & 
-         !is.na(Adjusted_Val))
+
 
 # Filter the data for Southern Ocean Direct LLC in Big Pine Key since 2010
 sod_data <- GI_cleaned %>%
@@ -712,11 +704,11 @@ species_summary <- sod_data %>%
   ) %>%
   arrange(landed_year, desc(total_adjusted_value))
 
-# Rank and filter to get top 5 species for each year
+# Rank and filter to get top 10 species for each year
 top_species <- species_summary %>%
   group_by(landed_year) %>%
   mutate(rank = row_number()) %>%
-  filter(rank <= 5) %>%
+  filter(rank <= 10) %>%
   ungroup()
 
 # View the top species
@@ -726,7 +718,7 @@ print(top_species)
 ggplot(top_species, aes(x = factor(landed_year), y = total_adjusted_value, fill = common_name_cleaned)) +
   geom_bar(stat = "identity", position = "dodge") +
   labs(
-    title = "Top 5 Species by Adjusted Value for Southern Ocean Direct LLC in Big Pine Key (2010 onwards)",
+    title = "Top 10 Species by Adjusted Value for Southern Ocean Direct LLC in Big Pine Key (2010 onwards)",
     x = "Year",
     y = "Total Adjusted Value",
     fill = "Species"
@@ -745,10 +737,6 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 
-# Drop rows with NAs in relevant columns
-GI_cleaned <- GI %>%
-  filter(!is.na(dealer_city) & !is.na(corporate_name) & 
-         !is.na(common_name_cleaned) & !is.na(Adjusted_Val))
 
 # Convert common_name_cleaned to lowercase for consistency
 GI_cleaned <- GI_cleaned %>%
@@ -767,19 +755,25 @@ species_summary <- sea_critters_data %>%
   ) %>%
   arrange(desc(total_adjusted_value))
 
+# Check if Snappers were ever landed
+snappers_data <- sea_critters_data %>%
+  filter(common_name_cleaned == "Snappers")
+
 # Print the summary data
 print(species_summary)
 
 # Visualization
 ggplot(species_summary, aes(x = reorder(common_name_cleaned, total_adjusted_value), y = total_adjusted_value)) +
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", aes(fill = ifelse(common_name_cleaned == "Snappers", "red", "grey"))) +
   coord_flip() +
   labs(
     title = "Species Landed by SEA CRITTERS in Big Pine Key Ordered by Adjusted Value",
     x = "Species",
-    y = "Total Adjusted Value"
+    y = "Total Adjusted Value",
+    fill = "Species"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  scale_fill_manual(values = c("red" = "red", "grey" = "grey"), labels = c("snappers" = "Snappers", "grey" = "Other Species"))
 
 
 ```
@@ -789,15 +783,7 @@ ggplot(species_summary, aes(x = reorder(common_name_cleaned, total_adjusted_valu
 library(dplyr)
 library(stringr)
 
-# Drop rows with NAs in relevant columns
-GI_cleaned <- GI %>%
-  filter(!is.na(dealer_city) & !is.na(landed_year) & 
-         !is.na(corporate_name) & !is.na(common_name_cleaned) & 
-         !is.na(Adjusted_Val))
 
-# Convert common_name_cleaned to lowercase for consistency
-GI_cleaned <- GI_cleaned %>%
-  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
 
 # Filter the data for SEA CRITTERS in Big Pine Key
 sea_critters_data <- GI_cleaned %>%
@@ -831,9 +817,7 @@ write.csv(top_species, "top_species_sea_critters.csv", row.names = FALSE)
 
 
 ```{r}
-# Convert common_name_cleaned to lowercase for consistency
-GI_cleaned <- GI_cleaned %>%
-  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
 
 # Filter the data for SEA CRITTERS in Big Pine Key for the year 2017
 sea_critters_2017 <- GI_cleaned %>%
@@ -862,4 +846,692 @@ ggplot(species_summary_2017, aes(x = reorder(common_name_cleaned, total_adjusted
   ) +
   theme_minimal()
 ```
+Find the dealers that land the key species for Big Pine Key
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(stringr)
+
+# Convert common_name_cleaned to lowercase for consistency
+big_pine_key_data <- big_pine_key_data %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+# Define key species
+key_species <- c("blue crab", "snapper", "stone crab", "spiny lobster")
+
+# Filter data for key species
+key_species_data <- big_pine_key_data %>%
+  filter(common_name_cleaned %in% key_species)
+
+# Summarize to find dealers for each key species and calculate cumulative values
+dealers_by_species <- key_species_data %>%
+  group_by(common_name_cleaned, corporate_name) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    cumulative_value = cumsum(Adjusted_Val),
+    .groups = 'drop'
+  ) %>%
+  arrange(common_name_cleaned, desc(total_adjusted_value))
+
+# Print the summary data
+print(dealers_by_species)
+
+# If you want to save the summary data to a CSV file
+write.csv(dealers_by_species, "dealers_by_key_species.csv", row.names = FALSE)
+
+
+```
+
+
+ 5 dealers for each species by value landed and break it down for each five-year period
+
+
+
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(stringr)
+library(lubridate)
+
+str(big_pine_key_data)
+
+# Create five-year periods
+key_species_data <- key_species_data %>%
+  mutate(period = cut(landed_year, breaks = seq(1990, 2025, by = 5), right = FALSE, labels = paste(seq(1990, 2020, by = 5), seq(1994, 2024, by = 5), sep = "-")))
+
+# Summarize to find dealers for each key species, calculate cumulative values, and filter top 5 dealers for each five-year period
+top_dealers_by_species <- key_species_data %>%
+  group_by(period, common_name_cleaned, corporate_name) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(period, common_name_cleaned, desc(total_adjusted_value)) %>%
+  group_by(period, common_name_cleaned) %>%
+  slice_head(n = 5) %>%
+  ungroup()
+
+# Print the summary data
+print(top_dealers_by_species)
+
+# If you want to save the summary data to a CSV file
+write.csv(top_dealers_by_species, "top_dealers_by_key_species.csv", row.names = FALSE)
+
+```
+
+Heatmap 
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+
+# Create a heatmap
+ggplot(top_dealers_by_species, aes(x = period, y = corporate_name, fill = total_adjusted_value)) +
+  geom_tile() +
+  facet_wrap(~ common_name_cleaned, scales = "free_y") +
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  labs(
+    title = "Heatmap of Total Adjusted Values for Dealers by Key Species and Period",
+    x = "Five-Year Period",
+    y = "Dealer",
+    fill = "Total Adjusted Value"
+  ) +
+  theme_minimal()
+
+```
+
+Box plot
+
+```{r}
+
+ggplot(top_dealers_by_species, aes(x = period, y = total_adjusted_value, fill = period)) +
+  geom_boxplot() +
+  facet_wrap(~ common_name_cleaned) +
+  labs(
+    title = "Distribution of Total Adjusted Values for Dealers by Key Species and Period",
+    x = "Five-Year Period",
+    y = "Total Adjusted Value",
+    fill = "Five-Year Period"
+  ) +
+  theme_minimal()
+
+```
+DG Seafood
+
+
+```{r}
+
+
+# Filter the data for Southern Ocean Direct LLC in Big Pine Key since 2010
+DG_data <- big_pine_key_data %>%
+  filter(dealer_city == "BIG PINE KEY" & corporate_name == "DG SEAFOOD LLC")
+
+# Summarize by year and species
+species_summaryDG <- DG_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Rank and filter to get top 10 species for each year
+top_speciesDG <- species_summaryDG %>%
+  group_by(landed_year) %>%
+  mutate(rank = row_number()) %>%
+  filter(rank <= 10) %>%
+  ungroup()
+
+# View the top species
+print(top_species)
+
+# Visualization
+ggplot(top_speciesDG, aes(x = factor(landed_year), y = total_adjusted_value, fill = common_name_cleaned)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Top 10 Species by Adjusted Value for DG SEAFOOD LLC in Big Pine Key (2010 onwards)",
+    x = "Year",
+    y = "Total Adjusted Value",
+    fill = "Species"
+  ) +
+  theme_minimal()
+```
+Comparison with Big Pine Key
+
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+
+
+# Find the first year when DG SEAFOOD LLC shows up in the data
+first_year_DG <- DG_data %>%
+  summarize(first_year = min(landed_year, na.rm = TRUE))
+
+# Print the first year
+print(first_year_DG)
+
+# Filter the data for Big Pine Key since 2010
+big_pine_key_data <- big_pine_key_data %>%
+  filter(dealer_city == "BIG PINE KEY" & landed_year >= 2014)
+
+library(stringr)
+
+# Summarize by year and species for DG SEAFOOD LLC
+species_summaryDG <- DG_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Rank and filter to get top 10 species for each year for DG SEAFOOD LLC
+top_speciesDG <- species_summaryDG %>%
+  group_by(landed_year) %>%
+  mutate(rank = row_number()) %>%
+  filter(rank <= 10) %>%
+  ungroup()
+
+# Summarize by year and species for the community level
+species_summary_community <- big_pine_key_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Rank and filter to get top 10 species for each year at the community level
+top_species_community <- species_summary_community %>%
+  group_by(landed_year) %>%
+  mutate(rank = row_number()) %>%
+  filter(rank <= 10) %>%
+  ungroup()
+
+# Combine data for visualization
+comparison_data <- bind_rows(
+  top_speciesDG %>% mutate(source = "DG SEAFOOD LLC"),
+  top_species_community %>% mutate(source = "Community")
+)
+
+ggplot(comparison_data, aes(x = factor(landed_year), y = total_adjusted_value, fill = common_name_cleaned)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = common_name_cleaned), position = position_dodge(width = 0.9), angle = 45, vjust = 0.5, hjust = 0.5, size = 3) +
+  facet_wrap(~ source) +
+  labs(
+    title = "Comparison of Top 10 Species by Adjusted Value",
+    x = "Year",
+    y = "Total Adjusted Value",
+    fill = "Species"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")  # Remove legend since labels are added directly
+
+```
+
+
+```{r}
+
+
+# Define the start year (you can change this to any year you prefer or remove it)
+start_year <- 1990  # Change this to any starting year you prefer
+
+# Define the species of interest
+target_species <- c("spiny lobster", "stone crab", "blue crab")
+
+# Filter the data for Big Pine Key since the defined start year
+big_pine_key_data <- big_pine_key_data %>%
+  filter(dealer_city == "BIG PINE KEY" & landed_year >= start_year)
+
+# Convert common_name_cleaned to lowercase for consistency
+big_pine_key_data <- big_pine_key_data %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+# Filter the data for the target species
+big_pine_key_data <- big_pine_key_data %>%
+  filter(common_name_cleaned %in% target_species)
+
+# Filter the data for DG SEAFOOD LLC in Big Pine Key
+DG_data <- big_pine_key_data %>%
+  filter(corporate_name == "DG SEAFOOD LLC")
+
+# Summarize by year and species for DG SEAFOOD LLC
+species_summaryDG <- DG_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Summarize by year and species for the community level
+species_summary_community <- big_pine_key_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Combine data for visualization
+comparison_data <- bind_rows(
+  species_summaryDG %>% mutate(source = "DG"),
+  species_summary_community %>% mutate(source = "BPK")
+)
+
+# Visualization
+ggplot(comparison_data, aes(x = factor(landed_year), y = total_adjusted_value, fill = interaction(common_name_cleaned, source))) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  geom_text(aes(label = source), 
+            position = position_dodge(width = 0.9), 
+            angle = 45, 
+            vjust = -0.5, 
+            hjust = 0.5, 
+            size = 3) +
+  facet_wrap(~ common_name_cleaned, scales = "free_y") +
+  labs(
+    title = "Comparison of Adjusted Values for Spiny Lobster, Stone Crab, and Blue Crab",
+    x = "Year",
+    y = "Total Adjusted Value",
+    fill = "Species and Source"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.ticks = element_line(colour = "black")
+  ) +
+  scale_fill_manual(values = c("spiny lobster.BPK" = "#1b9e77", 
+                               "spiny lobster.DG" = "#d95f02",
+                               "stone crab.BPK" = "#7570b3", 
+                               "stone crab.DG" = "#e7298a",
+                               "blue crab.BPK" = "#66a61e", 
+                               "blue crab.DG" = "#e6ab02"))
+
+
+```
+
+```{r}
+
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+# Define the start year (you can change this to any year you prefer or remove it)
+start_year <- 1990  # Change this to any starting year you prefer
+
+# Define the species of interest
+target_species <- c("spiny lobster", "stone crab", "blue crab")
+
+# Filter the data for Big Pine Key since the defined start year
+big_pine_key_data <- big_pine_key_data %>%
+  filter(dealer_city == "BIG PINE KEY" & landed_year >= start_year)
+
+# Convert common_name_cleaned to lowercase for consistency
+big_pine_key_data <- big_pine_key_data %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+# Filter the data for the target species
+big_pine_key_data <- big_pine_key_data %>%
+  filter(common_name_cleaned %in% target_species)
+
+# Filter the data for DG SEAFOOD LLC in Big Pine Key
+DG_data <- big_pine_key_data %>%
+  filter(corporate_name == "DG SEAFOOD LLC")
+
+# Summarize by year and species for DG SEAFOOD LLC
+species_summaryDG <- DG_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Summarize by year and species for the community level
+species_summary_community <- big_pine_key_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Combine data for visualization
+comparison_data <- bind_rows(
+  species_summaryDG %>% mutate(source = "DG"),
+  species_summary_community %>% mutate(source = "BPK")
+)
+
+# Plot trend lines for each species individually
+species_list <- c("spiny lobster", "stone crab", "blue crab")
+colors <- c("DG" = "blue", "BPK" = "green")
+
+for (species in species_list) {
+  species_data <- comparison_data %>% filter(common_name_cleaned == species)
+  
+  p <- ggplot(species_data, aes(x = landed_year, y = total_adjusted_value, color = source, group = source)) +
+    geom_line(size = 1) +
+    geom_point(size = 2) +
+    labs(
+      title = paste("Trend of", str_to_title(species), "Landings"),
+      x = "Year",
+      y = "Total Adjusted Value",
+      color = "Source"
+    ) +
+    scale_color_manual(values = colors) +
+    theme_minimal() +
+    theme(
+      legend.position = "top",
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.line = element_line(colour = "black"),
+      axis.ticks = element_line(colour = "black")
+    )
+  
+  ggsave(paste0("trend_", gsub(" ", "_", species), ".png"), plot = p)
+}
+
+```
+
+## Comparing Big Pine landngs to the state of florida landing trends for spiny lobster, stone crab and blue crab
+
+
+calculate the percentage of landings in Big Pine Key relative to the state of Florida and create the trend lines accordingly.
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+
+
+# Filter the data for the state of Florida since the defined start year
+florida_data <- GI_cleaned %>%
+  filter(dealer_state == "FL" & landed_year >= start_year)
+
+# Convert common_name_cleaned to lowercase for consistency
+big_pine_key_data <- big_pine_key_data %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+florida_data <- florida_data %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+# Filter the data for the target species
+big_pine_key_data <- big_pine_key_data %>%
+  filter(common_name_cleaned %in% target_species)
+
+florida_data <- florida_data %>%
+  filter(common_name_cleaned %in% target_species)
+
+# Summarize by year and species for Big Pine Key
+species_summary_bpk <- big_pine_key_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Summarize by year and species for the state of Florida
+species_summary_fl <- florida_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Calculate the percentage of Big Pine Key landings relative to Florida landings
+comparison_data <- left_join(
+  species_summary_bpk,
+  species_summary_fl,
+  by = c("landed_year", "common_name_cleaned"),
+  suffix = c("_bpk", "_fl")
+) %>%
+  mutate(percentage = (total_adjusted_value_bpk / total_adjusted_value_fl) * 100)
+
+# Plot trend lines for each species with percentage
+species_list <- c("spiny lobster", "stone crab", "blue crab")
+colors <- c("BPK" = "green", "FL" = "blue")
+
+for (species in species_list) {
+  species_data <- comparison_data %>% filter(common_name_cleaned == species)
+  
+  p <- ggplot(species_data, aes(x = landed_year, y = percentage, group = 1)) +
+    geom_line(size = 1, color = "green") +
+    geom_point(size = 2, color = "green") +
+    labs(
+      title = paste("Percentage of", str_to_title(species), "Landings in Big Pine Key Relative to Florida"),
+      x = "Year",
+      y = "Percentage (%)"
+    ) +
+    theme_minimal() +
+    theme(
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.line = element_line(colour = "black"),
+      axis.ticks = element_line(colour = "black")
+    )
+  
+  ggsave(paste0("trend_percentage_", gsub(" ", "_", species), "_BPK_vs_FL.png"), plot = p)
+}
+
+```
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+# Define the start year (you can change this to any year you prefer or remove it)
+start_year <- 1990  # Change this to any starting year you prefer
+
+# Define the species of interest
+target_species <- c("spiny lobster", "stone crab", "blue crab")
+
+# Filter the data for Big Pine Key since the defined start year
+big_pine_key_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & landed_year >= start_year)
+
+# Filter the data for the state of Florida since the defined start year
+florida_data <- GI_cleaned %>%
+  filter(dealer_state == "FL" & landed_year >= start_year)
+
+# Convert common_name_cleaned to lowercase for consistency
+big_pine_key_data <- big_pine_key_data %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+florida_data <- florida_data %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+# Filter the data for the target species
+big_pine_key_data <- big_pine_key_data %>%
+  filter(common_name_cleaned %in% target_species)
+
+florida_data <- florida_data %>%
+  filter(common_name_cleaned %in% target_species)
+
+# Summarize by year and species for Big Pine Key
+species_summary_bpk <- big_pine_key_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Summarize by year and species for the state of Florida
+species_summary_fl <- florida_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Calculate the percentage of Big Pine Key landings relative to Florida landings
+comparison_data <- left_join(
+  species_summary_bpk,
+  species_summary_fl,
+  by = c("landed_year", "common_name_cleaned"),
+  suffix = c("_bpk", "_fl")
+) %>%
+  mutate(percentage = (total_adjusted_value_bpk / total_adjusted_value_fl) * 100)
+
+# Plot trend lines for each species with percentage
+species_list <- c("spiny lobster", "stone crab", "blue crab")
+
+for (species in species_list) {
+  species_data <- comparison_data %>% filter(common_name_cleaned == species)
+  
+  p <- ggplot(species_data, aes(x = landed_year, y = percentage, group = 1)) +
+    geom_line(size = 1, color = "green") +
+    geom_point(size = 2, color = "green") +
+    labs(
+      title = paste("Percentage of", str_to_title(species), "Landings in Big Pine Key Relative to Florida"),
+      x = "Year",
+      y = "Percentage (%)"
+    ) +
+    theme_minimal(base_family = "Arial") +
+    theme(
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.line = element_line(colour = "black"),
+      axis.ticks = element_line(colour = "black"),
+      plot.background = element_rect(fill = "white", color = NA),  # Ensure white background
+      panel.background = element_rect(fill = "white", color = NA)  # Ensure white panel background
+    )
+  
+  ggsave(paste0("trend_percentage_", gsub(" ", "_", species), "_BPK_vs_FL.png"), plot = p)
+}
+
+
+```
+Normalize data for visualization
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+# Define the start year (you can change this to any year you prefer or remove it)
+start_year <- 1990  # Change this to any starting year you prefer
+
+# Define the species of interest
+target_species <- c("spiny lobster", "stone crab", "blue crab")
+
+# Filter the data for Big Pine Key since the defined start year
+big_pine_key_data <- GI_cleaned %>%
+  filter(dealer_city == "BIG PINE KEY" & landed_year >= start_year)
+
+# Filter the data for the state of Florida since the defined start year
+florida_data <- GI_cleaned %>%
+  filter(dealer_state == "FL" & landed_year >= start_year)
+
+# Convert common_name_cleaned to lowercase for consistency
+big_pine_key_data <- big_pine_key_data %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+florida_data <- florida_data %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned))
+
+# Filter the data for the target species
+big_pine_key_data <- big_pine_key_data %>%
+  filter(common_name_cleaned %in% target_species)
+
+florida_data <- florida_data %>%
+  filter(common_name_cleaned %in% target_species)
+
+# Summarize by year and species for Big Pine Key
+species_summary_bpk <- big_pine_key_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Summarize by year and species for the state of Florida
+species_summary_fl <- florida_data %>%
+  group_by(landed_year, common_name_cleaned) %>%
+  summarize(
+    total_adjusted_value = sum(Adjusted_Val, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(landed_year, desc(total_adjusted_value))
+
+# Normalize the values for each species
+normalize <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+
+species_summary_bpk <- species_summary_bpk %>%
+  group_by(common_name_cleaned) %>%
+  mutate(normalized_value = normalize(total_adjusted_value))
+
+species_summary_fl <- species_summary_fl %>%
+  group_by(common_name_cleaned) %>%
+  mutate(normalized_value = normalize(total_adjusted_value))
+
+# Combine data for visualization
+comparison_data <- bind_rows(
+  species_summary_bpk %>% mutate(source = "BPK"),
+  species_summary_fl %>% mutate(source = "FL")
+)
+
+# Plot normalized trend lines for each species
+species_list <- c("spiny lobster", "stone crab", "blue crab")
+colors <- c("BPK" = "green", "FL" = "blue")
+
+for (species in species_list) {
+  species_data <- comparison_data %>% filter(common_name_cleaned == species)
+  
+  p <- ggplot(species_data, aes(x = landed_year, y = normalized_value, color = source, group = source)) +
+    geom_line(size = 1) +
+    geom_point(size = 2) +
+    geom_vline(xintercept = 1998, linetype = "dashed", color = "red") +
+    geom_vline(xintercept = 2005, linetype = "dashed", color = "orange") +
+    geom_vline(xintercept = 2017, linetype = "dashed", color = "purple") +
+    labs(
+      title = paste("Normalized Trend of", str_to_title(species), "Landings"),
+      x = "Year",
+      y = "Normalized Value",
+      color = "Source"
+    ) +
+    annotate("text", x = 1998, y = 1.05, label = "Georges", color = "red", angle = 90, vjust = -0.5) +
+    annotate("text", x = 2005, y = 1.05, label = "Wilma", color = "orange", angle = 90, vjust = -0.5) +
+    annotate("text", x = 2017, y = 1.05, label = "Irma", color = "purple", angle = 90, vjust = -0.5) +
+    scale_color_manual(values = colors) +
+    theme_minimal() +
+    theme(
+      legend.position = "top",
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.line = element_line(colour = "black"),
+      axis.ticks = element_line(colour = "black"),
+      plot.background = element_rect(fill = "white", color = NA),  # Ensure white background
+      panel.background = element_rect(fill = "white", color = NA)  # Ensure white panel background
+    )
+  
+  ggsave(paste0("normalized_trend_", gsub(" ", "_", species), "_BPK_vs_FL.png"), plot = p)
+}
+
+
+```
+
+- seems that the month a hurricane makes landfall has an impact on the type of fishery it impacts. Irma clearly impacted the spiny lobster fishery as it fell smack in the middle of it but the traps for stone crabs were saved as these had not been placed in the water at that time (season started the following month in Oct)
+
+
+
 

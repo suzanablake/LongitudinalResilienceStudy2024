@@ -1,0 +1,75 @@
+---
+title: "GOM Council Managed Species"
+author: "Suzana Blake"
+format: html
+---
+
+##Reef Fish
+The GMFMC manages 31 species of reef fish under the Fishery Management Plan for Reef Fish Resources. Some notable species include:
+
+#Snappers: Red Snapper, Lane Snapper, Gray Snapper, Vermilion Snapper, Silk Snapper, Queen Snapper, Blackfin Snapper, Cubera Snapper, Wenchman Snapper, Yellowtail Snapper
+#Groupers: Red Grouper, Gag Grouper, Black Grouper, Scamp, Yellowedge Grouper, Yellowfin Grouper, Snowy Grouper, Warsaw Grouper, Speckled Hind, Atlantic Goliath Grouper
+#Others: Gray Triggerfish, Greater Amberjack, Lesser Amberjack, Almaco Jack, Banded Rudderfish, Tilefish (Blueline, Golden, Goldface), Hogfish.
+
+##Coastal Migratory Pelagics
+This category includes species such as:
+
+#Cobia: Managed jointly by the GMFMC and the South Atlantic Fishery Management Council.
+#King Mackerel and Spanish Mackerel: These species are also managed under this category and include specific regulations for both commercial and recreational fisheries​​.
+Other Categories
+#Shrimp: Includes various species of shrimp managed to ensure sustainable harvests and conservation of the ecosystem.
+#Spiny Lobster: Managed to balance commercial and recreational harvesting while ensuring the species' sustainability.
+#Corals and Coral Reefs: Includes measures to protect coral habitats and associated species.
+#Red Drum: Management focuses on rebuilding and maintaining sustainable populations.
+
+##Essential Fish Habitat (EFH): This encompasses protections for habitats critical to the lifecycle of various managed species
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(stringr)
+
+# Define the species categories managed by GMFMC
+reef_fish <- c("red snapper", "lane snapper", "gray snapper", "vermilion snapper", "silk snapper", 
+               "queen snapper", "blackfin snapper", "cubera snapper", "wenchman snapper", 
+               "yellowtail snapper", "red grouper", "gag grouper", "black grouper", "scamp", 
+               "yellowedge grouper", "yellowfin grouper", "snowy grouper", "warsaw grouper", 
+               "speckled hind", "atlantic goliath grouper", "gray triggerfish", "greater amberjack", 
+               "lesser amberjack", "almaco jack", "banded rudderfish", "blueline tilefish", 
+               "golden tilefish", "goldface tilefish", "hogfish")
+coastal_migratory_pelagics <- c("cobia", "king mackerel", "spanish mackerel")
+shrimp <- c("brown shrimp", "white shrimp", "pink shrimp", "royal red shrimp")
+spiny_lobster <- c("spiny lobster")
+corals <- c("coral")
+red_drum <- c("red drum")
+
+# Create a function to categorize species
+categorize_species <- function(species) {
+  species <- str_to_lower(species)
+  if (species %in% reef_fish) {
+    return("Reef Fish")
+  } else if (species %in% coastal_migratory_pelagics) {
+    return("Coastal Migratory Pelagics")
+  } else if (species %in% shrimp) {
+    return("Shrimp")
+  } else if (species %in% spiny_lobster) {
+    return("Spiny Lobster")
+  } else if (species %in% corals) {
+    return("Corals")
+  } else if (species %in% red_drum) {
+    return("Red Drum")
+  } else {
+    return("Other")
+  }
+}
+
+# Convert common_name_cleaned to lowercase and categorize species
+GI_cleaned <- GI_cleaned %>%
+  mutate(common_name_cleaned = str_to_lower(common_name_cleaned),
+         category = sapply(common_name_cleaned, categorize_species))
+
+# View the updated dataframe
+head(GI_cleaned)
+
+```
+
